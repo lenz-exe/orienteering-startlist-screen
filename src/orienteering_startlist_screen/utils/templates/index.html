@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Startlist - Live</title>
+
+    <meta name="description"
+        content="@yield('meta_description', 'Startlist - Live is a live start list for the sport orienteering.')" />
+    <meta name="keywords" content="@yield('meta_keywords', 'Startlist, Orienteering, Live, IOF')" />
+    <meta name="author" content="@yield('meta_author', 'lenz-exe')" />
+    <meta name="generator" content="Python Flask" />
+    <meta name="robots" content="index,follow" />
+
+    <meta property="og:title" content="@yield('og_title', 'Startlist - Live')" />
+    <meta property="og:description"
+        content="@yield('og_description', 'Startlist - Live is a live start list for the sport orienteering.')" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="@yield('og_site_name', 'Startlist - Live')" />
+
+    <!-- DEV ONLY: Tailwind via CDN (fast prototyping) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // optional: for a minimal tailwind-config setup in cdn-mode
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f5faff', 100: '#e6f4ff', 200: '#bfddff', 300: '#92c2ff', 400: '#64a6ff',
+                            500: '#3c8cff', 600: '#1f6fe6', 700: '#1556b4', 800: '#0f3d82', 900: '#0a295a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        table {
+            border-collapse: collapse;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-gray-50 text-gray-900">
+    <header class="sticky top-0 z-50 backdrop-blur bg-white/80 border-b border-gray-200 shadow-sm">
+        <div class="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                    class="w-5 h-5 text-brand-600">
+                    <path fill-rule="evenodd"
+                        d="M12 2.25a9.75 9.75 0 1 0 9.75 9.75A9.76 9.76 0 0 0 12 2.25Zm.75 4.5a.75.75 0 0 0-1.5 0V12c0 .199.079.39.22.53l3 3a.75.75 0 1 0 1.06-1.06l-2.78-2.78V6.75Z"
+                        clip-rule="evenodd" />
+                </svg>
+                <span class="font-semibold">Startlist: {{ event_name }}</span>
+            </div>
+            <div class="text-xl font-mono tabular-nums">Start: {{ start_name }}</div>
+            <div id="status" class="text-5xl font-mono tabular-nums">--:--:--</div>
+        </div>
+    </header>
+
+    <main class="mx-auto max-w-6xl px-4 py-6">
+        {% for slot in slots %}
+        <section id="slot_{{ slot.start_dt.strftime('%H_%M_%S') }}" class="scroll-mt-24"
+            data-start-ms="{{ slot.start_dt.timestamp() * 1000 | int }}">
+            <h2 class="text-lg font-semibold text-gray-800">
+                Startzeit {{ slot.start_dt.strftime("%H:%M:%S") }}
+            </h2>
+
+            <div class="overflow-x-auto mt-3 rounded-xl border border-gray-200 bg-white shadow">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-gray-50">
+                        <tr class="text-left text-gray-700">
+                            <th class="px-3 w-24 py-2 font-semibold">Time</th>
+                            <th class="px-3 w-24 py-2 font-semibold">SI</th>
+                            <th class="px-3 py-2 font-semibold">Name</th>
+                            <th class="px-3 py-2 font-semibold">Category</th>
+                            <th class="px-3 py-2 font-semibold">Club</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in slot.participants %}
+                        <tr class="border-t border-gray-100">
+                            <td class="px-3 py-2 whitespace-nowrap font-mono">
+                                {{ slot.start_dt.strftime("%H:%M:%S") }}
+                            </td>
+
+                            <td class="px-3 py-2 whitespace-nowrap font-mono">
+                                {{ p.control_card or "" }}
+                            </td>
+
+                            <td class="px-3 py-2">
+                                {{ (p.last_name or "")|upper }} {{ p.first_name or "" }}
+                                {% if p.bib_number %}<span class="text-gray-500">#{{ p.bib_number }}</span>{% endif %}
+                            </td>
+
+                            <td class="px-3 py-2">
+                                {% set cat = p.class_name_short or p.class_name %}
+                                {% if cat %}
+                                <span
+                                    class="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 text-xs font-medium border border-emerald-200">
+                                    {{ cat }}
+                                </span>
+                                {% endif %}
+                            </td>
+
+                            <td class="px-3 py-2">
+                                {{ p.club_name_short or p.club_name or "" }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        {% if not loop.last %}
+        <hr class="my-8 border-gray-200" />
+        {% endif %}
+        {% endfor %}
+
+        <footer class="mt-10 text-center text-xs text-gray-500">
+            Startlist - {{ event_name }}
+        </footer>
+    </main>
+
+    <script>
+        let slotSeconds = {{ slot_seconds|default (60) }};
+        let activeSlotId = null;
+        const headerEl = document.querySelector('header');
+
+        async function tick() {
+            try {
+                const nowRes = await fetch('/api/now', { cache: 'no-store' });
+                const nowData = await nowRes.json();
+                const nowMs = nowData.now_ms;
+
+                document.getElementById('status').textContent = `Serverzeit: ${fmtTimeFromMs(nowMs)}`;
+
+                highlightCurrentSlot(nowMs);
+            } catch (e) {
+                document.getElementById('status').textContent = 'Verbindung verloren…';
+            }
+        }
+
+        function fmtTimeFromMs(ms) {
+            const d = new Date(ms);
+            return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+
+        function highlightCurrentSlot(nowMs) {
+            const sections = Array.from(document.querySelectorAll('section[id^="slot_"]'));
+
+            let currentEl = null;
+            let nextEl = null;
+            let minDelta = Number.POSITIVE_INFINITY;
+
+            sections.forEach(sec => {
+                sec.className = "scroll-mt-24";
+                const startMs = parseInt(sec.dataset.startMs, 10);
+                const endMs = startMs + slotSeconds * 1000;
+
+                if (nowMs >= startMs && nowMs < endMs) {
+                    currentEl = sec;
+                    sec.className = "scroll-mt-24 ring-2 ring-brand-400 rounded-xl p-2 bg-brand-50/40";
+                } else if (nowMs < startMs) {
+                    const delta = startMs - nowMs;
+                    if (delta < minDelta) {
+                        minDelta = delta;
+                        nextEl = sec;
+                    }
+                }
+            });
+
+            const target = currentEl ?? nextEl;
+            if (!target) return;
+
+            if (activeSlotId !== target.id) {
+                activeSlotId = target.id;
+                smoothScrollIntoView(target);
+            }
+        }
+
+        function smoothScrollIntoView(el) {
+            const headerH = headerEl ? headerEl.offsetHeight : 0;
+            const rect = el.getBoundingClientRect();
+            const alreadyVisible =
+                rect.top >= headerH && rect.bottom <= (window.innerHeight || document.documentElement.clientHeight);
+
+            if (alreadyVisible) return;
+
+            const top = window.scrollY + rect.top - headerH - 12;
+            window.scrollTo({ top, behavior: 'smooth' });
+        }
+
+        (async function init() {
+            await tick();
+            setInterval(tick, 1000);
+        })();
+    </script>
+</body>
+
+</html>

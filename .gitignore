@@ -1,0 +1,48 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[codz]
+*$py.class
+
+# IDEs
+.idea/
+.code/
+.vscode/
+
+# Distribution / packaging
+build/
+dist/
+
+# Environments
+.env
+.envrc
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Unit test / coverage reports
+.cache
+.pytest_cache/
+.ruff_cache/
+.mypy_cache
+report_pytest.xml
+report_ruff.json
+
+# Generated files
+*.log
+*.zip
+installer_*.exe
+*_generated.xml
+.gitlab-ci.yml
+style.qss
