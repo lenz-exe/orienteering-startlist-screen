@@ -4,7 +4,10 @@ from flask import Flask, jsonify, render_template
 from werkzeug.serving import make_server
 import threading
 import time
+import logging
 
+
+logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
 def create_app(start_list: Dict[datetime, List], slot_seconds: int = 60) -> Flask:
     app = Flask(__name__)

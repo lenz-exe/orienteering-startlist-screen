@@ -27,6 +27,7 @@ def generate_individual_startlist_xml(num_classes: int = 4,
                            global_start_time: datetime = datetime.now().replace(second=0, microsecond=0),
                            interval_seconds: int = 60,
                            class_spacing_seconds: int = 0,
+                           number_of_starts: int = 2,
                            xsd_file_path: str = "./src/orienteering_startlist_screen/resources/iof_v3_0.xsd",
                            out_path: str = "./example_generated.xml") -> str:
     fake = Faker()
@@ -64,7 +65,7 @@ def generate_individual_startlist_xml(num_classes: int = 4,
     for class_index in range(num_classes):
         classes_el = etree.SubElement(root, "ClassStart")
         class_el = etree.SubElement(classes_el, "Class")
-        etree.SubElement(classes_el, "StartName").text = f"Start {random.choice([1, 2])}"
+        etree.SubElement(classes_el, "StartName").text = f"Start {random.choice(range(1, number_of_starts + 1))}"
         etree.SubElement(class_el, "Id").text = str(class_index)
         class_name = f"{random.choice(["Men", "Women"])}"
         class_name_short = class_name[0]

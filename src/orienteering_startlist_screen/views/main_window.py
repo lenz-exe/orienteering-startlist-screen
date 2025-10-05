@@ -57,7 +57,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.action_generate_demo_fIle.triggered.connect(self.generate_demo_file)
 
     def generate_demo_file(self) -> None:
-        file_path = generate_individual_startlist_xml(num_classes=10, participants_per_class=20)
+        file_path = generate_individual_startlist_xml(num_classes=10, participants_per_class=20, number_of_starts=15)
 
         if not os.path.isfile(file_path):
             logger.error(f"File {file_path} not found")
@@ -132,6 +132,7 @@ class MainWindow(QtWidgets.QMainWindow):
         dialog = StartAndPortSelectDialog(start_name_list=start_name_list)
         if dialog.exec():
             selections = dialog.result_data
+            logger.info(f"Selections: {selections}")
             if not selections:
                 QMessageBox.information(self, "Info", "No valid port selected.")
                 return
@@ -154,6 +155,7 @@ class MainWindow(QtWidgets.QMainWindow):
             server = WebServerThread(app, host=host, port=port)
             try:
                 server.start()
+                logger.info(f"Server started {host}:{port}")
             except Exception as e:
                 logger.error(f"Failed to start server ({host}:{port}): {e}")
                 QMessageBox.critical(self, "Error", f"Failed to start server ({host}:{port}): {e}")

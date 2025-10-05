@@ -30,11 +30,12 @@ class Ui_StartPortSelectDialog(object):
         StartPortSelectDialog.setWindowIcon(icon)
         self.verticalLayout = QVBoxLayout(StartPortSelectDialog)
         self.verticalLayout.setObjectName(u"verticalLayout")
+        self.verticalLayout.setContentsMargins(2, 0, 2, 0)
         self.widget_4 = QWidget(StartPortSelectDialog)
         self.widget_4.setObjectName(u"widget_4")
         self.horizontalLayout_3 = QHBoxLayout(self.widget_4)
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
-        self.horizontalLayout_3.setContentsMargins(0, 0, 0, 10)
+        self.horizontalLayout_3.setContentsMargins(0, 0, 0, 5)
         self.horizontalSpacer_3 = QSpacerItem(75, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout_3.addItem(self.horizontalSpacer_3)
@@ -56,13 +57,34 @@ class Ui_StartPortSelectDialog(object):
 
         self.verticalLayout.addWidget(self.widget_4)
 
+        self.widget_5 = QWidget(StartPortSelectDialog)
+        self.widget_5.setObjectName(u"widget_5")
+        self.horizontalLayout = QHBoxLayout(self.widget_5)
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
+        self.horizontalSpacer_5 = QSpacerItem(75, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout.addItem(self.horizontalSpacer_5)
+
+        self.label_max_servers = QLabel(self.widget_5)
+        self.label_max_servers.setObjectName(u"label_max_servers")
+
+        self.horizontalLayout.addWidget(self.label_max_servers)
+
+        self.horizontalSpacer_6 = QSpacerItem(75, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout.addItem(self.horizontalSpacer_6)
+
+
+        self.verticalLayout.addWidget(self.widget_5)
+
         self.scrollArea = QScrollArea(StartPortSelectDialog)
         self.scrollArea.setObjectName(u"scrollArea")
         self.scrollArea.setMinimumSize(QSize(0, 180))
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 453, 225))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 467, 222))
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
 
         self.verticalLayout.addWidget(self.scrollArea)
@@ -85,5 +107,6 @@ class Ui_StartPortSelectDialog(object):
     def retranslateUi(self, StartPortSelectDialog):
         StartPortSelectDialog.setWindowTitle(QCoreApplication.translate("StartPortSelectDialog", u"Start and Port Dialog", None))
         self.label_toolname.setText(QCoreApplication.translate("StartPortSelectDialog", u"Please select minimal one start", None))
+        self.label_max_servers.setText(QCoreApplication.translate("StartPortSelectDialog", u"TextLabel", None))
     # retranslateUi
 
