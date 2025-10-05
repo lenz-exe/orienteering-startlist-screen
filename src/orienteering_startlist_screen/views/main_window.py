@@ -1,7 +1,7 @@
 import datetime
 import logging
 import os
-from typing import Optional
+from typing import Optional, Any
 import webbrowser
 
 from PySide6 import QtWidgets
@@ -36,7 +36,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.xsd_file_path = "./src/orienteering_startlist_screen/resources/iof_v3_0.xsd"
         self.start_list = None
         self.server_running = False
-        self.web_server: Optional[WebServerThread] = None
+        self.web_servers: dict[Any, Any] = {}
 
         status_bar_version_label = QtWidgets.QLabel(f"Version: {config.application_version} ")
         self.statusBar().addPermanentWidget(status_bar_version_label)
@@ -138,18 +138,48 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             return
 
+        if self.server_running and self.web_servers:
+            self.stop_all_servers()
+
         slot_seconds = 60
-        app = create_app(self.start_list, slot_seconds=slot_seconds)
-        self.web_server = WebServerThread(app, host="127.0.0.1", port=5000)
-        self.web_server.start()
+        started_urls = []
+
+        for item in selections:
+            host = item['host']
+            port = int(item['port'])
+            selection = item['combo']
+
+            start_list = self.start_list.get(selection)
+            app = create_app(start_list=start_list, slot_seconds=slot_seconds)
+            server = WebServerThread(app, host=host, port=port)
+            try:
+                server.start()
+            except Exception as e:
+                logger.error(f"Failed to start server ({host}:{port}): {e}")
+                QMessageBox.critical(self, "Error", f"Failed to start server ({host}:{port}): {e}")
+                continue
+            self.web_servers[(host, port)] = server
+            started_urls.append(f"http://{host}:{port}/")
+
+        if not started_urls:
+            QMessageBox.information(self, "Info", "No server started.")
+            return
+
         self.server_running = True
 
-        url = f"http://127.0.0.1:5000/"
-        self.ui.label_status.setText(f"Local webserver running: {url}")
+        if len(started_urls) == 1:
+            self.ui.label_status.setText(f"Local webserver running: {started_urls[0]}")
+        else:
+            joined = " | ".join(started_urls[:3])
+            more = "" if len(started_urls) <= 3 else f" (+{len(started_urls)-3} more)"
+            self.ui.label_status.setText(f"{len(started_urls)} Webserver running: {joined}{more}")
+
         try:
-            webbrowser.open(url)
+            for url in started_urls[:3]:
+                webbrowser.open(url)
         except Exception:
             pass
+
         self.ui.button_push_start.setVisible(False)
         self.ui.button_push_start.setEnabled(False)
         self.ui.button_push_stop.setEnabled(True)
@@ -158,11 +188,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def stop_clock(self) -> None:
         if not self.server_running:
             return
-        try:
-            if self.web_server:
-                self.web_server.shutdown()
-        except Exception as e:
-            logger.warning(f"Shutdown failed: {e}")
+        self.stop_all_servers()
         self.server_running = False
         self.ui.label_status.setText("Stopped webserver")
         self.ui.button_push_start.setVisible(True)
@@ -172,11 +198,24 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def closeEvent(self, event) -> None:
         try:
-            if self.server_running and self.web_server:
-                self.web_server.shutdown()
+            if self.server_running and self.web_servers:
+                self.stop_all_servers()
         except Exception as e:
             logger.warning(f"Shutdown failed: {e}")
         super().closeEvent(event)
+
+    def stop_all_servers(self) -> None:
+        errors = []
+        for key, server in list(self.web_servers.items()):
+            try:
+                if server:
+                    server.shutdown()
+            except Exception as e:
+                errors.append(f"{key}: {e}")
+                logger.error(f"Shutdown failed {key}: {e}")
+        self.web_servers.clear()
+        if errors:
+            QMessageBox.critical(self, "Shutdown-Error", f"Some servers could not be shut down correctly:\n {'\n'.join(errors)}")
 
     def open_file_dialog(self, title: str = 'Open File', file_extensions: str = 'All Files(*)',
                          default_file_extension: str = 'All Files(*)', use_last_used_path: bool = False,
