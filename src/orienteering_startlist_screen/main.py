@@ -4,13 +4,11 @@ import locale
 import logging
 import os
 from logging.handlers import RotatingFileHandler
-
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QLocale
-from qt_material import apply_stylesheet
-
 from orienteering_startlist_screen.views.main_window import MainWindow
 from orienteering_startlist_screen import config
+from qt_material import apply_stylesheet
 
 logger = logging.getLogger(__name__)
 

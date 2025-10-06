@@ -72,11 +72,11 @@ class InnoSetupFileGenerator:
         if not os.path.isdir(iss_output_dir):
             raise NotADirectoryError(iss_output_dir)
 
-        files = get_folders_and_files(target_dir=self.pyinstaller_output_dir)
-        files_str = "\n".join([f"{file}" for file in files])
+        # files = get_folders_and_files(target_dir=self.pyinstaller_output_dir)
+        # files_str = "\n".join([f"{file}" for file in files])
 
         content = rf"""[Setup]
-AppId={'{{' + self.app_id + '}'}
+AppId={'{{' + self.app_id + '}}'}
 AppName={self.app_name}
 AppVersion={self.app_version}
 AppPublisher={self.org_name}
@@ -102,7 +102,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{{cm:CreateDesktopIcon}}"; GroupDescription: "{{cm:AdditionalIcons}}"; Flags: unchecked
 
 [Files]
-{files_str}
+Source: "dist\Orienteering-Startlist-Screen\*"; DestDir: "{{app}}"; Flags: recursesubdirs createallsubdirs ignoreversion
 
 [Icons]
 Name: "{{autoprograms}}\{self.app_name}"; Filename: "{{app}}\{self.pyinstaller_exe_name}"
@@ -245,17 +245,13 @@ def search_for_inno_setup_folder() -> Optional[str]:
 
 
 def build_spec():
-    if os.path.exists(f"{config.application_name}.spec"):
+    spec_path = f"{config.application_name}.spec"
+    if os.path.exists(spec_path):
         print(f"Removing: {f'{config.application_name}.spec'}")
-        os.remove(f"{config.application_name}.spec")
+        os.remove(spec_path)
 
     hidden_imports = [
-        "pyttsx4.drivers",
-        "pyttsx4.drivers.dummy",
-        "pyttsx4.drivers.espeak",
-        "pyttsx4.drivers.nsss",
-        "pyttsx4.drivers.sapi5",
-        "orienteering_startlist_screen.resources_rc",
+        "src.orienteering_startlist_screen.resources.resources_rc",
     ]
     excludes = [
         "PyQt",
@@ -289,7 +285,6 @@ def build_spec():
         "thrift",
         "bson",
         "snappy",
-        "markupsafe",
         "tornado",
         "pygame",
         "tkinter",
@@ -305,7 +300,7 @@ def build_spec():
 
     command = [
         "pyi-makespec",
-        '--windowed',             # no terminal console
+        # '--windowed',             # no terminal console
         "--contents-directory",
         ".",  # Use “.” to re-enable old one dir layout without contents directory
         f'--name "{config.application_name}"',
@@ -373,21 +368,16 @@ def build_installer():
         app_icon_path=os.path.join(
             "src", "orienteering_startlist_screen", "resources", "images", "logo.ico"
         ),
-        installer_output_dir=os.path.dirname(os.path.abspath(__name__)),
+        installer_output_dir=".",
         pyinstaller_exe_name="Orienteering-Startlist-Screen.exe",
-        app_id_path=os.path.join(
-            os.path.dirname(os.path.abspath(__name__)), "app_id.txt"
-        ),
+        app_id_path=os.path.join(".", "app_id.txt"),
         pyinstaller_output_dir=os.path.join("dist", config.application_name),
         org_name=config.organization_name,
         org_url=config.organization_domain,
-        license_path=os.path.join(os.path.dirname(os.path.abspath(__name__)), "LICENSE"),
+        license_path=os.path.join(".", "LICENSE"),
         need_admin_install=True,
     )
-    installer_generator.create_iss_file(os.path.dirname(os.path.abspath(__name__)))
-    iss_file_path = os.path.join(
-        os.path.dirname(os.path.abspath(__name__)),
-        f"{installer_generator.app_name}.iss",
-    )
+    installer_generator.create_iss_file(".")
+    iss_file_path = os.path.join(".", f"{installer_generator.app_name}.iss")
     result = compile_installer_exe(iss_file_path=iss_file_path)
     print(f"Compile result: {result}")
