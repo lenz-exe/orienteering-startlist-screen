@@ -9,10 +9,9 @@ import logging
 
 logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
-def create_app(start_list: Dict[datetime, List], slot_seconds: int = 60) -> Flask:
+def create_app(start_list: Dict[datetime, List], slot_seconds: int = 60, start_name: str = "") -> Flask:
     app = Flask(__name__)
     event_name = "Test-Event"
-    start_name = "Blub"
 
     @app.get("/api/now")
     def api_now():
