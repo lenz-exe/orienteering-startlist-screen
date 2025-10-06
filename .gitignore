@@ -44,5 +44,3 @@ report_ruff.json
 *.zip
 installer_*.exe
 *_generated.xml
-.gitlab-ci.yml
-style.qss
