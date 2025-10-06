@@ -48,13 +48,16 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.ui.button_push_start.setEnabled(False)
         self.ui.button_push_start.clicked.connect(self.start_clock)
+        self.ui.button_push_start.setProperty('class', 'success')
 
         self.ui.button_push_stop.setEnabled(False)
         self.ui.button_push_stop.setVisible(False)
         self.ui.button_push_stop.clicked.connect(self.stop_clock)
+        self.ui.button_push_stop.setProperty('class', 'danger')
 
         self.ui.action_about.triggered.connect(self.open_about_dialog)
         self.ui.action_generate_demo_fIle.triggered.connect(self.generate_demo_file)
+        self.ui.label_status.setText("Please select a .xml file")
 
     def generate_demo_file(self) -> None:
         file_path = generate_individual_startlist_xml(num_classes=10, participants_per_class=20, number_of_starts=15)
@@ -132,7 +135,6 @@ class MainWindow(QtWidgets.QMainWindow):
         dialog = StartAndPortSelectDialog(start_name_list=start_name_list)
         if dialog.exec():
             selections = dialog.result_data
-            logger.info(f"Selections: {selections}")
             if not selections:
                 QMessageBox.information(self, "Info", "No valid port selected.")
                 return
@@ -149,9 +151,10 @@ class MainWindow(QtWidgets.QMainWindow):
             host = item['host']
             port = int(item['port'])
             selection = item['combo']
+            logger.info(f"Selection: host={host}, port={port}, selection={selection}")
 
             start_list = self.start_list.get(selection)
-            app = create_app(start_list=start_list, slot_seconds=slot_seconds)
+            app = create_app(start_list=start_list, slot_seconds=slot_seconds, start_name=selection)
             server = WebServerThread(app, host=host, port=port)
             try:
                 server.start()
@@ -212,6 +215,7 @@ class MainWindow(QtWidgets.QMainWindow):
             try:
                 if server:
                     server.shutdown()
+                    logger.info(f"Server stopped {key[0]}:{key[1]}")
             except Exception as e:
                 errors.append(f"{key}: {e}")
                 logger.error(f"Shutdown failed {key}: {e}")

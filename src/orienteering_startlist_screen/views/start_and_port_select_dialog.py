@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
     QMessageBox, QHBoxLayout, QVBoxLayout, QWidget,
     QLineEdit, QComboBox, QDialogButtonBox
 )
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QIntValidator
 
 from orienteering_startlist_screen.ui.start_port_select_dialog_ui import Ui_StartPortSelectDialog
@@ -23,7 +24,8 @@ class StartAndPortSelectDialog(QtWidgets.QDialog):
         self._rows: list[dict[str, QLineEdit | QComboBox]] = []
 
         if max_servers is None:
-            max_servers = max(1, (os.cpu_count() or 4))
+            cpu_count = os.cpu_count() or 4
+            max_servers = max(1, cpu_count -1 if cpu_count > 2 else max_servers)
         self.max_servers = max_servers
 
         self.ui.scrollArea.setWidgetResizable(True)
@@ -35,7 +37,10 @@ class StartAndPortSelectDialog(QtWidgets.QDialog):
             container_layout.setContentsMargins(0, 0, 0, 0)
             container_layout.setSpacing(6)
 
-        choices = ['---'] + list(start_name_list)
+        # start_name_list.sort(key=lambda x: int(x.split()[1]))
+        start_name_list = sorted(start_name_list, key=lambda x: int(x.split()[1]))
+
+        choices = ['---'] + start_name_list
 
         port = 5000
         for _ in choices:
@@ -51,10 +56,17 @@ class StartAndPortSelectDialog(QtWidgets.QDialog):
             combo = QComboBox()
             combo.addItems(choices)
             combo.setCurrentIndex(0)
+            for i in range(combo.count()):
+                combo.setItemData(i, Qt.AlignLeft | Qt.AlignVCenter, Qt.TextAlignmentRole)
+            combo.view().setTextElideMode(Qt.ElideNone)
+            combo.setSizeAdjustPolicy(QComboBox.AdjustToContents)
+            fm = combo.fontMetrics()
+            w = max(fm.horizontalAdvance(combo.itemText(i)) for i in range(combo.count())) + 32
+            combo.setMinimumWidth(max(150, w))
 
+            row_layout.addWidget(combo)
             row_layout.addWidget(host_le)
             row_layout.addWidget(port_le)
-            row_layout.addWidget(combo)
 
             row_widget = QWidget()
             row_widget.setLayout(row_layout)
@@ -93,6 +105,7 @@ class StartAndPortSelectDialog(QtWidgets.QDialog):
         self.ui.buttonBox.button(QDialogButtonBox.Apply).setEnabled(any_selected)
 
         self.ui.label_max_servers.setText(f"Selected: {selected_count} / {self.max_servers}")
+
     def update_apply_enabled(self):
         any_selected = any(r["combo"].currentText() != '---' for r in self._rows)
         self.ui.buttonBox.button(QDialogButtonBox.Apply).setEnabled(any_selected)

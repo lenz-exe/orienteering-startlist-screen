@@ -30,7 +30,7 @@ class Ui_StartPortSelectDialog(object):
         StartPortSelectDialog.setWindowIcon(icon)
         self.verticalLayout = QVBoxLayout(StartPortSelectDialog)
         self.verticalLayout.setObjectName(u"verticalLayout")
-        self.verticalLayout.setContentsMargins(2, 0, 2, 0)
+        self.verticalLayout.setContentsMargins(2, 2, 2, 2)
         self.widget_4 = QWidget(StartPortSelectDialog)
         self.widget_4.setObjectName(u"widget_4")
         self.horizontalLayout_3 = QHBoxLayout(self.widget_4)
@@ -84,7 +84,7 @@ class Ui_StartPortSelectDialog(object):
         self.scrollArea.setWidgetResizable(True)
         self.scrollAreaWidgetContents = QWidget()
         self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 467, 222))
+        self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 467, 218))
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
 
         self.verticalLayout.addWidget(self.scrollArea)

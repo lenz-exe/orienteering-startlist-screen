@@ -2,19 +2,18 @@ import sys
 import traceback
 import locale
 import logging
+import os
 from logging.handlers import RotatingFileHandler
 
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QLocale
+from qt_material import apply_stylesheet
+
 from orienteering_startlist_screen.views.main_window import MainWindow
 from orienteering_startlist_screen import config
 
 logger = logging.getLogger(__name__)
 
-
-# def load_stylesheet():
-#     with open("./src/orienteering_startlist_screen/resources/style.qss", "r") as file:
-#         return file.read()
 
 def main():
     log_name = f"{config.module_name}.log"
@@ -31,13 +30,9 @@ def main():
         encoding='utf-8',
         handlers=[rot_log_handler]
     )
-    logger.info(f"{'*' * 60}")
-    logger.info(f"Tool-Name: {config.application_name}")
-    logger.info(f"Tool-Version: {config.application_version}")
-    logger.info(f"{'*' * 60}")
+    logger.info(f"Tool started | Version: {config.application_version}")
 
     app = QApplication(sys.argv)
-    # app.setStyleSheet(load_stylesheet())
     app.setObjectName(config.module_name)
     app.setOrganizationName(config.application_name)
     app.setOrganizationDomain(config.organization_domain)
@@ -47,6 +42,17 @@ def main():
     language = config.application_language
     QLocale.setDefault(QLocale(language))
     locale.setlocale(locale.LC_ALL, "")
+
+    theme_path = os.path.join("./src/orienteering_startlist_screen/resources/", "theme_forest.xml")
+
+    extra = {
+        "danger": "#b00020",
+        "warning": "#ffb300",
+        "success": "#4caf50",
+        'density_scale': '-1',
+    }
+
+    apply_stylesheet(app, theme=theme_path, extra=extra)
 
     main_window = MainWindow(application=app)
     try:
