@@ -27,7 +27,7 @@
   </property>
   <property name="windowIcon">
    <iconset resource="../resources/resources.qrc">
-    <normaloff>:/icons/images/logo.png</normaloff>:/icons/images/logo.png</iconset>
+    <normaloff>:/icons/images/logo.ico</normaloff>:/icons/images/logo.ico</iconset>
   </property>
   <property name="locale">
    <locale language="English" country="Germany"/>

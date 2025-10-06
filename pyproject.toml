@@ -17,6 +17,8 @@ dependencies = [
 "qt-material (>=2.17,<3.0)",
 "lxml (>=6.0.2,<7.0.0)",
 "pycountry (>=24.6.1,<25.0.0)",
+"pyinstaller (>=6.16.0,<7.0.0)",
+"pillow (>=11.3.0,<12.0.0)",
 ]
 
 [project.scripts]

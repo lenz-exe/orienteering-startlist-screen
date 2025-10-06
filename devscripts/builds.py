@@ -8,155 +8,173 @@ from typing import Optional
 from src.orienteering_startlist_screen import config
 
 
-class InnoSetupScriptGenerator:
+class InnoSetupFileGenerator:
     def __init__(
-        self,
-        app_name: str,
-        app_version: str,
-        app_icon_path: str,
-        installer_exe_output_dir: str,
-        exe_name: str,
-        app_id_txt_path: str,
-        pyinstaller_gen_output_dir: str,
-        org_name: str = "Example Company",
-        org_url: str = "https://www.example.com",
-        installer_name: Optional[str] = None,
-        need_admin_install: bool = False,
+            self,
+            app_name: str,
+            app_version: str,
+            installer_output_dir: str,
+            pyinstaller_exe_name: str,
+            app_id_path: str,
+            pyinstaller_output_dir: str,
+            app_icon_path: Optional[str] = None,
+            org_name: str = "Example Company",
+            org_url: str = "https://www.example.com",
+            license_path: Optional[str] = None,
+            installer_name: Optional[str] = None,
+            need_admin_install: bool = True,
     ):
         """
         Class to generate the .iss file for the Inno Setup Compiler.
 
         :param app_name: The name of the app/tool
         :param app_version: The version of the app/tool e.g: '1.0.0
-        :param app_icon_path: The Path to the icon of the app/tool e.g: 'G:\\GIT\\toolname\\icons\\kft_logo.ico'
-        :param installer_exe_output_dir: Path to the directory where the generated installer exe file get placed
-        :param exe_name: Name of the exe file which get created by the PyInstaller
-        :param app_id_txt_path: Path to the txt file which containes the app_id. If file not found a new gets created
-        :param pyinstaller_gen_output_dir: Path to the folder with the generated files/folders from PyInstaller
+        :param app_icon_path: The Path to the icon of the app/tool e.g: 'G:\\GIT\\toolname\\icons\\logo.ico'
+        :param installer_output_dir: Path to the directory where the generated installer exe file get placed
+        :param pyinstaller_exe_name: Name of the exe file which get created by the PyInstaller
+        :param app_id_path: Path to the txt file which contains the app_id. If file not found a new gets created
+        :param pyinstaller_output_dir: Path to the folder with the generated files/folders from PyInstaller
         :param org_name: The name of the organisation e.g.: 'Example Company'
         :param org_url: The url of the organisation e.g.: 'https://www.example.com'
         :param installer_name: Name of the installer e.g.: 'installer_toolname_1_0_0.exe'
         :param need_admin_install: Whether the installer should be installed as administrator or not
         """
-        try:
-            if not os.path.isfile(app_icon_path):
-                raise FileNotFoundError(app_icon_path)
-            if not os.path.isdir(installer_exe_output_dir):
-                raise NotADirectoryError(installer_exe_output_dir)
+        if app_icon_path and not os.path.isfile(app_icon_path):
+            raise FileNotFoundError(app_icon_path)
+        if not os.path.isdir(installer_output_dir):
+            raise NotADirectoryError(installer_output_dir)
+        if not os.path.isdir(pyinstaller_output_dir):
+            raise NotADirectoryError(pyinstaller_output_dir)
+        if license_path and not os.path.isfile(license_path):
+            raise FileNotFoundError(license_path)
 
-            self.app_name = app_name
-            self.app_version = app_version
-            self.app_icon_path = app_icon_path
-            self.installer_exe_output_dir = installer_exe_output_dir
-            self.exe_name = exe_name
-            self.app_id_txt_path = app_id_txt_path
-            self.pyinstaller_gen_output_dir = pyinstaller_gen_output_dir
-            self.org_name = org_name
-            self.org_url = org_url
-            if not installer_name:
-                self.installer_name = self.normalize_installer_name()
-            else:
-                self.installer_name = installer_name
-            self.need_admin_install = need_admin_install
+        self.app_name = app_name
+        self.app_version = app_version
+        self.pyinstaller_exe_name = pyinstaller_exe_name
+        self.app_id = get_app_id(app_id_path=app_id_path, app_name=app_name)
+        self.pyinstaller_output_dir = pyinstaller_output_dir
+        self.installer_output_dir = installer_output_dir
+        self.app_icon_path = app_icon_path
+        self.org_name = org_name
+        self.org_url = org_url
+        self.license_path = license_path
+        if not installer_name:
+            self.installer_name = normalize_installer_name(app_name=app_name, app_version=app_version)
+        else:
+            self.installer_name = installer_name
+        self.need_admin_install = need_admin_install
 
-            self.app_id = self.load_or_generate_app_id()
-        except Exception as e:
-            raise Exception(e)
-
-    def load_or_generate_app_id(self) -> str:
-        try:
-            if os.path.exists(self.app_id_txt_path):
-                with open(self.app_id_txt_path, "r") as file:
-                    app_id = file.read().strip()
-                    return app_id
-            else:
-                app_id = str(uuid.uuid4())
-                with open(self.app_id_txt_path, "w") as file:
-                    file.write(app_id)
-                return app_id
-        except Exception as e:
-            raise Exception(e)
-
-    def normalize_installer_name(self) -> str:
+    def create_iss_file(self, iss_output_dir: str):
         """
-        When no installer name is provided, the installer name gets generated out of the app_name and the app_version.
+        Create the .iss file for the Inno Setup Compiler.
+        :param iss_output_dir: Path to the directory where the generated iss get placed
         """
-        temp_name = self.app_name.lower().replace("-", "_")
-        version = self.normalize_version()
-        installer_name = f"installer_{temp_name}_{version}"
-        return installer_name
+        if not os.path.isdir(iss_output_dir):
+            raise NotADirectoryError(iss_output_dir)
 
-    def normalize_version(self) -> str:
-        """
-        Removes the dots out of the version string and replace it with underscores.
-        """
-        version = self.app_version.replace(".", "_")
-        return version
+        files = get_folders_and_files(target_dir=self.pyinstaller_output_dir)
+        files_str = "\n".join([f"{file}" for file in files])
 
-    def generate_iss_file(self, iss_file_output_dir: str):
-        """
-        :param iss_file_output_dir: Path to the directory where the generated iss file get placed
-        """
-        try:
-            if not os.path.isdir(iss_file_output_dir):
-                raise NotADirectoryError(iss_file_output_dir)
-
-            app_id_str = "{{" + self.app_id + "}"
-
-            if self.need_admin_install:
-                admin_install_str = ""
-            else:
-                admin_install_str = "PrivilegesRequired=lowest"
-
-            tasks_description = "{cm:CreateDesktopIcon}"
-            tasks_group_description = "{cm:AdditionalIcons}"
-            icon_autoporgrams_name = "{autoprograms}\\" + self.app_name
-            icon_autoporgrams_filename = "{app}\\" + self.exe_name
-            icon_autodesktop_name = "{autodesktop}\\" + self.app_name
-            icon_autodesktop_filename = "{app}\\" + self.exe_name
-
-            files = get_files_and_folders(target_dir=self.pyinstaller_gen_output_dir)
-            files_str = "\n".join([f"{file}" for file in files])
-
-            script_content = rf"""[Setup]
-AppId={app_id_str}
+        content = rf"""[Setup]
+AppId={'{{' + self.app_id + '}'}
 AppName={self.app_name}
 AppVersion={self.app_version}
 AppPublisher={self.org_name}
 AppPublisherURL={self.org_url}
 AppSupportURL={self.org_url}
 AppUpdatesURL={self.org_url}
-DefaultDirName=C:\\ExampleCompany\\{self.app_name}
+DefaultDirName={{autopf}}\{self.app_name}
+UninstallDisplayIcon={{app}}\{self.pyinstaller_exe_name}
 DisableProgramGroupPage=yes
+{f'LicenseFile={self.license_path}' if self.license_path else ''}
+{'' if self.need_admin_install else 'PrivilegesRequired=lowest'}
 PrivilegesRequiredOverridesAllowed=dialog
-OutputDir={self.installer_exe_output_dir}
+OutputDir={self.installer_output_dir}
 OutputBaseFilename={self.installer_name}
-SetupIconFile={self.app_icon_path}
-Compression=lzma
+{f'SetupIconFile={self.app_icon_path}' if self.app_icon_path else ''}
 SolidCompression=yes
 WizardStyle=modern
-{admin_install_str}
 
 [Languages]
-Name: "german"; MessagesFile: "compiler:Languages\German.isl"
+Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "{tasks_description}"; GroupDescription: "{tasks_group_description}"; Flags: unchecked
+Name: "desktopicon"; Description: "{{cm:CreateDesktopIcon}}"; GroupDescription: "{{cm:AdditionalIcons}}"; Flags: unchecked
 
 [Files]
 {files_str}
 
 [Icons]
-Name: "{icon_autoporgrams_name}"; Filename: "{icon_autoporgrams_filename}"
-Name: "{icon_autodesktop_name}"; Filename: "{icon_autodesktop_filename}"; Tasks: desktopicon
-            """
+Name: "{{autoprograms}}\{self.app_name}"; Filename: "{{app}}\{self.pyinstaller_exe_name}"
+Name: "{{autodesktop}}\{self.app_name}"; Filename: "{{app}}\{self.pyinstaller_exe_name}"; Tasks: desktopicon
 
-            with open(
-                os.path.join(iss_file_output_dir, f"{self.app_name}.iss"), "w"
-            ) as f:
-                f.write(script_content)
-        except Exception as e:
-            raise Exception(e)
+[Run]
+; Start the app after the installation (optional)
+Filename: "{{app}}\{self.pyinstaller_exe_name}"; Description: "{{cm:LaunchProgram,{self.app_name}}}"; Flags: nowait postinstall skipifsilent
+"""
+        with open(os.path.join(iss_output_dir, f"{self.app_name}.iss"), 'w') as file:
+            file.write(content)
+
+
+def get_app_id(app_id_path: str, app_name: str) -> str:
+    """
+    Get app id from app_id path if exists, else generate an app id with the app name as namespace dns and uuid version5
+    :param app_id_path: string of the path to app id txt file or where it should be saved
+    :param app_name: string of the app name
+    """
+    if not os.path.isfile(app_id_path):
+        app_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, app_name))
+        with open(app_id_path, "w") as file:
+            file.write(app_id)
+    with open(app_id_path, "r") as file:
+        app_id = file.read()
+    return app_id
+
+
+def normalize_installer_name(app_name: str, app_version: str) -> str:
+    """
+    When no installer name is provided, the installer name gets generated out of the app_name and the app_version.
+    :param app_name: string of the app name
+    :param app_version: string of the app version
+    """
+    tmp_name = app_name.lower().replace(" ", "_")
+    tmp_version = app_version.replace(".", "_")
+    installer_name = f"installer_{tmp_name}_{tmp_version}"
+    return installer_name
+
+
+def get_folders_and_files(target_dir: str, ignore_extensions_list: Optional[str | tuple[str, ...]] = None) -> list:
+    """
+    Function to get a list of files and folders in the needed format for the Inno Setup Compiler.
+
+    :param target_dir: Target directory
+    :param ignore_extensions_list: List of file extensions to ignore e.g. ('.exe', '.dll') or just '.exe'
+    """
+    if not os.path.isdir(target_dir):
+        raise NotADirectoryError(target_dir)
+    formated_files = []
+    formated_folders = []
+    dest_dir = "{app}"
+    for root, dirs, files in os.walk(target_dir):
+        # We only care about the files in the root directory (the target_dir)
+        if root == target_dir:
+            for file in files:
+                if ignore_extensions_list and file.endswith(ignore_extensions_list):
+                    continue
+                file_path = os.path.join(root, file)
+                file_string = f'Source: "{file_path}"; DestDir: "{dest_dir}"; Flags: ignoreversion'
+                formated_files.append(file_string)
+
+            for folder in dirs:
+                folder_path = os.path.join(root, folder)
+                folder_string = f'Source: "{folder_path}\\*"; DestDir: "{dest_dir}\\{folder}"; Flags: ignoreversion recursesubdirs createallsubdirs'
+                formated_folders.append(folder_string)
+
+        # Prevent os.walk from going deeper into subdirectories
+        dirs[
+            :
+        ] = []  # Clear the dirs list so that os.walk doesn't descend into subfolders
+    return formated_files + formated_folders
 
 
 def compile_installer_exe(
@@ -226,45 +244,6 @@ def search_for_inno_setup_folder() -> Optional[str]:
         return None
 
 
-def get_files_and_folders(
-    target_dir: str, ignore_extensions_list: Optional[str | tuple[str, ...]] = None
-) -> list:
-    """
-    Function to get a list of files and folders in the needed format for the Inno Setup Compiler.
-
-    :param target_dir: Target directory
-    :param ignore_extensions_list: List of file extensions to ignore e.g. ('.exe', '.dll') or just '.exe'
-    """
-    try:
-        if not os.path.isdir(target_dir):
-            raise NotADirectoryError(target_dir)
-        formated_files = []
-        formated_folders = []
-        dest_dir = "{app}"
-        for root, dirs, files in os.walk(target_dir):
-            # We only care about the files in the root directory (the target_dir)
-            if root == target_dir:
-                for file in files:
-                    if ignore_extensions_list and file.endswith(ignore_extensions_list):
-                        continue
-                    file_path = os.path.join(root, file)
-                    file_string = f'Source: "{file_path}"; DestDir: "{dest_dir}"; Flags: ignoreversion'
-                    formated_files.append(file_string)
-
-                for folder in dirs:
-                    folder_path = os.path.join(root, folder)
-                    folder_string = f'Source: "{folder_path}\\*"; DestDir: "{dest_dir}\\{folder}"; Flags: ignoreversion recursesubdirs createallsubdirs'
-                    formated_folders.append(folder_string)
-
-            # Prevent os.walk from going deeper into subdirectories
-            dirs[
-                :
-            ] = []  # Clear the dirs list so that os.walk doesn't descend into subfolders
-        return formated_files + formated_folders
-    except Exception as e:
-        raise Exception(e)
-
-
 def build_spec():
     if os.path.exists(f"{config.application_name}.spec"):
         print(f"Removing: {f'{config.application_name}.spec'}")
@@ -322,18 +301,18 @@ def build_spec():
         ("pyproject.toml", "."),
     ]
 
-    icon_path = "src/orienteering_startlist_screen/resources/images/logo.png"
+    icon_path = "src/orienteering_startlist_screen/resources/images/logo.ico"
 
     command = [
         "pyi-makespec",
-        # '--windowed',             # no terminal console
+        '--windowed',             # no terminal console
         "--contents-directory",
         ".",  # Use “.” to re-enable old one dir layout without contents directory
         f'--name "{config.application_name}"',
         f'--icon "{icon_path}"',
         "--paths=./src/orienteering_startlist_screen",
     ]
-    # Trennzeichen je nach Betriebssystem für --add-data
+    # separate mark depending on os for --add-data
     sep = ";" if os.name == "nt" else ":"
 
     for data in datas:
@@ -356,8 +335,8 @@ def build_spec():
 def build_exe():
     spec_path = f"{config.application_name}.spec"
     if not os.path.exists(spec_path):
-        print(f"{spec_path} wurde nicht gefunden!")
-        print(f"Erstelle neue {spec_path} mit build_spec() ...")
+        print(f"{spec_path} could not be found!")
+        print(f"Create new {spec_path} with build_spec() ...")
         build_spec()
 
     for path in ["dist", "build"]:
@@ -388,23 +367,24 @@ def build_exe():
 def build_installer():
     build_exe()
 
-    installer_generator = InnoSetupScriptGenerator(
+    installer_generator = InnoSetupFileGenerator(
         app_name=config.application_name,
         app_version=config.application_version,
         app_icon_path=os.path.join(
             "src", "orienteering_startlist_screen", "resources", "images", "logo.ico"
         ),
-        installer_exe_output_dir=os.path.dirname(os.path.abspath(__name__)),
-        exe_name="Hello-World-Tool.exe",
-        app_id_txt_path=os.path.join(
+        installer_output_dir=os.path.dirname(os.path.abspath(__name__)),
+        pyinstaller_exe_name="Orienteering-Startlist-Screen.exe",
+        app_id_path=os.path.join(
             os.path.dirname(os.path.abspath(__name__)), "app_id.txt"
         ),
-        pyinstaller_gen_output_dir=os.path.join("dist", config.application_name),
+        pyinstaller_output_dir=os.path.join("dist", config.application_name),
         org_name=config.organization_name,
         org_url=config.organization_domain,
-        need_admin_install=False,
+        license_path=os.path.join(os.path.dirname(os.path.abspath(__name__)), "LICENSE"),
+        need_admin_install=True,
     )
-    installer_generator.generate_iss_file(os.path.dirname(os.path.abspath(__name__)))
+    installer_generator.create_iss_file(os.path.dirname(os.path.abspath(__name__)))
     iss_file_path = os.path.join(
         os.path.dirname(os.path.abspath(__name__)),
         f"{installer_generator.app_name}.iss",
