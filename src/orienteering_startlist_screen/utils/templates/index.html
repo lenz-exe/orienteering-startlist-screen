@@ -55,7 +55,7 @@
                 </svg>
                 <span class="font-semibold">Startlist: {{ event_name }}</span>
             </div>
-            <div class="text-xl font-mono tabular-nums">Start: {{ start_name }}</div>
+            <div class="text-xl font-mono tabular-nums">{{ start_name }}</div>
             <div id="status" class="text-5xl font-mono tabular-nums">--:--:--</div>
         </div>
     </header>
@@ -121,32 +121,66 @@
         {% endfor %}
 
         <footer class="mt-10 text-center text-xs text-gray-500">
-            Startlist - {{ event_name }}
+                <nav class="flex flex-wrap justify-center">
+                    <div class="px-5 py-2">Startlist - {{ event_name }}</div>
+                    <div id="last_sync" class="px-5 py-2">last_sync</div>
+                    <div id="last_sync_type" class="px-5 py-2">last_sync_type</div>
+                </nav>
         </footer>
     </main>
 
     <script>
-        let slotSeconds = {{ slot_seconds|default (60) }};
-        let activeSlotId = null;
-        const headerEl = document.querySelector('header');
+        let slot_seconds = {{ slot_seconds|default (60) }};
+        let active_slot_id = null;
+        const header_el = document.querySelector('header');
+        const status_el = document.getElementById('status');
+        const last_sync_el = document.getElementById('last_sync');
+        const last_sync_type_el = document.getElementById('last_sync_type')
 
-        async function tick() {
-            try {
-                const nowRes = await fetch('/api/now', { cache: 'no-store' });
-                const nowData = await nowRes.json();
-                const nowMs = nowData.now_ms;
+        // offset between servertime and local time (server_now_ms - Date.now())
+        let server_offset_ms = 0;
+        let last_sync_ms = 0;
+        let online = false;
 
-                document.getElementById('status').textContent = `Serverzeit: ${fmtTimeFromMs(nowMs)}`;
-
-                highlightCurrentSlot(nowMs);
-            } catch (e) {
-                document.getElementById('status').textContent = 'Verbindung verloren…';
-            }
-        }
 
         function fmtTimeFromMs(ms) {
             const d = new Date(ms);
             return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+
+        function getNowMs() {
+            // locale time + last known offset
+            return Date.now() + server_offset_ms;
+        }
+
+        async function syncServerTime() {
+            try {
+                const res = await fetch('/api/now', { cache: 'no-store' });
+                const data = await res.json();
+                const localNow = Date.now();
+                const measuredOffset = data.now_ms - localNow;
+
+                const alpha = 0.5; // 0..1 (1 = set direct)
+                server_offset_ms = alpha * measuredOffset + (1 - alpha) * server_offset_ms;
+
+                last_sync_ms = localNow;
+                online = true;
+                renderStatus();
+            } catch (e) {
+                // offline - offset stays, clock run continuously
+                online = false;
+                renderStatus();
+            }
+        }
+
+        function renderStatus() {
+            const nowMs = getNowMs();
+            const sinceSyncSec = Math.floor((Date.now() - last_sync_ms) / 1000);
+            const prefix = online ? 'server' : 'locale';
+            const suffix = last_sync_ms ? `${sinceSyncSec}s ago` : 'never';
+            last_sync_el.textContent = `last sync: ${suffix}`;
+            status_el.textContent = `${fmtTimeFromMs(nowMs)}`;
+            last_sync_type_el.textContent = `time from: ${prefix}`;
         }
 
         function highlightCurrentSlot(nowMs) {
@@ -159,7 +193,7 @@
             sections.forEach(sec => {
                 sec.className = "scroll-mt-24";
                 const startMs = parseInt(sec.dataset.startMs, 10);
-                const endMs = startMs + slotSeconds * 1000;
+                const endMs = startMs + slot_seconds * 1000;
 
                 if (nowMs >= startMs && nowMs < endMs) {
                     currentEl = sec;
@@ -176,14 +210,14 @@
             const target = currentEl ?? nextEl;
             if (!target) return;
 
-            if (activeSlotId !== target.id) {
-                activeSlotId = target.id;
+            if (active_slot_id !== target.id) {
+                active_slot_id = target.id;
                 smoothScrollIntoView(target);
             }
         }
 
         function smoothScrollIntoView(el) {
-            const headerH = headerEl ? headerEl.offsetHeight : 0;
+            const headerH = header_el ? header_el.offsetHeight : 0;
             const rect = el.getBoundingClientRect();
             const alreadyVisible =
                 rect.top >= headerH && rect.bottom <= (window.innerHeight || document.documentElement.clientHeight);
@@ -194,9 +228,27 @@
             window.scrollTo({ top, behavior: 'smooth' });
         }
 
+        // main loop (every second), separate sync (every minute)
         (async function init() {
-            await tick();
-            setInterval(tick, 1000);
+            // first synchronisation (first try server, else use locale time)
+            await syncServerTime().catch(() => { });
+            renderStatus();
+            highlightCurrentSlot(getNowMs());
+
+            // display / slots update every seconds (no network)
+            setInterval(() => {
+                const now = getNowMs();
+                renderStatus();
+                highlightCurrentSlot(now);
+            }, 1000);
+
+            // get server time every 60 seconds (get traffic down)
+            setInterval(syncServerTime, 60_000);
+
+            // on return to the browser tab make an extra synchronisation (minimize drift)
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) syncServerTime();
+            });
         })();
     </script>
 </body>
