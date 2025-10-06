@@ -4,7 +4,7 @@ import glob
 import os
 
 
-def run_generate_ui():
+def generate_ui():
     ui_path = "src/orienteering_startlist_screen\\ui\\"
     commands = []
 
@@ -26,7 +26,7 @@ def run_generate_ui():
             sys.exit(result.returncode)
 
 
-def run_generate_rcc():
+def generate_rcc():
     resources_path = "src/orienteering_startlist_screen\\resources\\"
     resources_out_path = "src/orienteering_startlist_screen\\resources\\"
     commands = []

@@ -2,7 +2,7 @@ import subprocess
 import sys
 
 
-def run_format_tests_and_checks():
+def format_tests_and_checks():
     commands = [
         "poetry run ruff format",
         "poetry run ruff format --check",
@@ -17,7 +17,7 @@ def run_format_tests_and_checks():
             sys.exit(result.returncode)
 
 
-def run_checks_and_tests():
+def checks_and_tests():
     commands = [
         "poetry run ruff format --check",
         "poetry run ruff check --output-format=gitlab --output-file report_ruff.json",
