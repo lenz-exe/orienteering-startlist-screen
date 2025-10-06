@@ -159,6 +159,7 @@ class MainWindow(QtWidgets.QMainWindow):
             try:
                 server.start()
                 logger.info(f"Server started {host}:{port}")
+                self.ui.listWidget_running_servers.addItem(f"{selection}: {host}:{port}")
             except Exception as e:
                 logger.error(f"Failed to start server ({host}:{port}): {e}")
                 QMessageBox.critical(self, "Error", f"Failed to start server ({host}:{port}): {e}")
@@ -172,12 +173,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.server_running = True
 
-        if len(started_urls) == 1:
-            self.ui.label_status.setText(f"Local webserver running: {started_urls[0]}")
-        else:
-            joined = " | ".join(started_urls[:3])
-            more = "" if len(started_urls) <= 3 else f" (+{len(started_urls)-3} more)"
-            self.ui.label_status.setText(f"{len(started_urls)} Webserver running: {joined}{more}")
+        self.ui.label_status.setText("Webserver running:")
 
         try:
             for url in started_urls[:3]:
@@ -219,6 +215,7 @@ class MainWindow(QtWidgets.QMainWindow):
             except Exception as e:
                 errors.append(f"{key}: {e}")
                 logger.error(f"Shutdown failed {key}: {e}")
+        self.ui.listWidget_running_servers.clear()
         self.web_servers.clear()
         if errors:
             QMessageBox.critical(self, "Shutdown-Error", f"Some servers could not be shut down correctly:\n {'\n'.join(errors)}")

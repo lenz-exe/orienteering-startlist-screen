@@ -17,18 +17,18 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
     QPainter, QPalette, QPixmap, QRadialGradient,
     QTransform)
 from PySide6.QtWidgets import (QApplication, QHBoxLayout, QLabel, QLineEdit,
-    QMainWindow, QMenu, QMenuBar, QPushButton,
-    QSizePolicy, QSpacerItem, QStatusBar, QVBoxLayout,
-    QWidget)
+    QListWidget, QListWidgetItem, QMainWindow, QMenu,
+    QMenuBar, QPushButton, QSizePolicy, QSpacerItem,
+    QStatusBar, QVBoxLayout, QWidget)
 import orienteering_startlist_screen.resources.resources_rc
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(400, 300)
-        MainWindow.setMinimumSize(QSize(300, 200))
-        MainWindow.setMaximumSize(QSize(500, 300))
+        MainWindow.resize(500, 500)
+        MainWindow.setMinimumSize(QSize(400, 300))
+        MainWindow.setMaximumSize(QSize(700, 500))
         icon = QIcon()
         icon.addFile(u":/icons/images/logo.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         MainWindow.setWindowIcon(icon)
@@ -50,6 +50,7 @@ class Ui_MainWindow(object):
         self.centralwidget.setObjectName(u"centralwidget")
         self.verticalLayout = QVBoxLayout(self.centralwidget)
         self.verticalLayout.setObjectName(u"verticalLayout")
+        self.verticalLayout.setContentsMargins(4, 4, 4, 4)
         self.widget_4 = QWidget(self.centralwidget)
         self.widget_4.setObjectName(u"widget_4")
         self.horizontalLayout_3 = QHBoxLayout(self.widget_4)
@@ -161,10 +162,32 @@ class Ui_MainWindow(object):
 
         self.verticalLayout.addWidget(self.widget_3)
 
+        self.widget_5 = QWidget(self.centralwidget)
+        self.widget_5.setObjectName(u"widget_5")
+        self.horizontalLayout_5 = QHBoxLayout(self.widget_5)
+        self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
+        self.horizontalLayout_5.setContentsMargins(0, 0, 0, 0)
+        self.horizontalSpacer_7 = QSpacerItem(145, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_5.addItem(self.horizontalSpacer_7)
+
+        self.listWidget_running_servers = QListWidget(self.widget_5)
+        self.listWidget_running_servers.setObjectName(u"listWidget_running_servers")
+        self.listWidget_running_servers.setMinimumSize(QSize(300, 0))
+
+        self.horizontalLayout_5.addWidget(self.listWidget_running_servers)
+
+        self.horizontalSpacer_8 = QSpacerItem(144, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_5.addItem(self.horizontalSpacer_8)
+
+
+        self.verticalLayout.addWidget(self.widget_5)
+
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 400, 33))
+        self.menubar.setGeometry(QRect(0, 0, 500, 33))
         self.menubar.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.menubar.setDefaultUp(False)
         self.menubar.setNativeMenuBar(True)
