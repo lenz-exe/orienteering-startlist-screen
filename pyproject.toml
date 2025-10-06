@@ -3,7 +3,7 @@ name = "orienteering-startlist-screen"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "Lorenz", email = "mail+git@brandl.vip"}
+    {name = "Lenz", email = "mail+git@brandl.vip"}
 ]
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
@@ -11,18 +11,19 @@ dependencies = [
 "pyside6 (>=6.9.2,<7.0.0)",
 "pyside6-addons (>=6.9.2,<7.0.0)",
 "poetry-core (>=2.1.3,<3.0.0)",
-"dotenv (>=0.9.9,<0.10.0)",
 "xmlschema (>=4.1.0,<5.0.0)",
 "flask (>=3.1.2,<4.0.0)",
-"requests (>=2.32.5,<3.0.0)",
 "faker (>=37.8.0,<38.0.0)",
+"qt-material (>=2.17,<3.0)",
+"lxml (>=6.0.2,<7.0.0)",
+"pycountry (>=24.6.1,<25.0.0)",
 ]
 
 [project.scripts]
-check = "devscripts.run_checks:run_format_tests_and_checks"
-check-ci = "devscripts.run_checks:run_checks_and_tests"
-generate-ui = "devscripts.generators:run_generate_ui"
-generate-rcc = "devscripts.generators:run_generate_rcc"
+check = "devscripts.checks:format_tests_and_checks"
+check-ci = "devscripts.checks:checks_and_tests"
+generate-ui = "devscripts.generators:generate_ui"
+generate-rcc = "devscripts.generators:generate_rcc"
 build-spec = "devscripts.builds:build_spec"
 build-exe = "devscripts.builds:build_exe"
 build-installer = "devscripts.builds:build_installer"
@@ -44,8 +45,6 @@ pytest = "^8.4.1"
 ruff = "^0.12.11"
 mypy = "^1.17.1"
 pytest-qt = "^4.5.0"
-lxml = "^6.0.1"
-pycountry = "^24.6.1"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
