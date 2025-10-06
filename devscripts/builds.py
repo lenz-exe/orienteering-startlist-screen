@@ -192,24 +192,24 @@ def compile_installer_exe(
 
             if not compiler_path:
                 compiler_path = input(
-                    "Der Inno Setup Compiler konnte nicht automatisch gefunden werden. "
-                    "Bitte den Pfad zur ISCC.exe angeben: "
+                    "The Inno Setup Compiler could not be found. "
+                    "Please provide the path to the ISCC.exe: "
                 )
                 if not os.path.exists(compiler_path):
-                    print("Der angegebene Pfad ist ungültig. Das Skript wird beendet.")
+                    print("The given path is does not exists. Exit script.")
                     return False
 
         command = [compiler_path, iss_file_path]
 
         try:
             subprocess.run(command, check=True)
-            print("Kompilierung erfolgreich!")
+            print("Compiling successful!")
             return True
         except subprocess.CalledProcessError as e:
-            print(f"Fehler bei der Kompilierung: {e}")
+            print(f"Error while compiling: {e}")
             return False
     except Exception as e:
-        print(f"Ein unerwarteter Fehler ist aufgetreten: {e}")
+        print(f"An unexpected error: {e}")
         return False
 
 
