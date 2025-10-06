@@ -26,7 +26,7 @@ class Ui_StartPortSelectDialog(object):
             StartPortSelectDialog.setObjectName(u"StartPortSelectDialog")
         StartPortSelectDialog.resize(473, 315)
         icon = QIcon()
-        icon.addFile(u":/icons/images/logo.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        icon.addFile(u":/icons/images/logo.ico", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         StartPortSelectDialog.setWindowIcon(icon)
         self.verticalLayout = QVBoxLayout(StartPortSelectDialog)
         self.verticalLayout.setObjectName(u"verticalLayout")

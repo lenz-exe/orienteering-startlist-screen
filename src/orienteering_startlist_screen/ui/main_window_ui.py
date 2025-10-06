@@ -30,7 +30,7 @@ class Ui_MainWindow(object):
         MainWindow.setMinimumSize(QSize(400, 300))
         MainWindow.setMaximumSize(QSize(700, 500))
         icon = QIcon()
-        icon.addFile(u":/icons/images/logo.png", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        icon.addFile(u":/icons/images/logo.ico", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         MainWindow.setWindowIcon(icon)
         MainWindow.setLocale(QLocale(QLocale.English, QLocale.Germany))
         self.action_help = QAction(MainWindow)
