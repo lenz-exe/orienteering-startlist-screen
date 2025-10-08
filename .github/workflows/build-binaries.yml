@@ -1,0 +1,143 @@
+name: Build Python App Binaries
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  APP_NAME: Orienteering-Startlist-Screen
+  PYTHON_VERSION: "3.13"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-linux:
+    name: Linux binary
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'poetry'
+
+      - name: Install Poetry
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+
+      - name: Install build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y patchelf
+
+      - name: Install deps (poetry install)
+        run: poetry install --no-interaction
+
+      # Generates a .spec file
+      - name: Generate .spec file
+        run: poetry run build-spec
+
+      # generates in ./dist the binary file and needed components
+      - name: Generate binary
+        run: poetry run build-bin
+
+      - name: Package tar.gz
+        run: |
+          mkdir -p package
+          cp "dist/${{ env.APP_NAME }}/${{ env.APP_NAME }}" package/
+          chmod +x "package/${{ env.APP_NAME }}"
+          tar -C package -czf "${{ env.APP_NAME }}-linux-x86_64.tar.gz" .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-linux-x86_64
+          path: ${{ env.APP_NAME }}-linux-x86_64.tar.gz
+
+  build-windows:
+    name: Windows binary + installer
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'poetry'
+
+      - name: Install Poetry
+        shell: powershell
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+
+      - name: Install deps (poetry install)
+        shell: powershell
+        run: poetry install --no-interaction
+
+      # Generates a ./Orienteering-Startlist-Screen.spec
+      - name: Generate .spec file
+        run: poetry run build-spec
+
+      # generates in ./dist the binary file and needed components
+      - name: Generate nary
+        run: poetry run build-bin
+
+      - name: Install Inno Setup
+        # Inno Setup per Chocolatey
+        shell: powershell
+        run: |
+          Set-ExecutionPolicy Bypass -Scope Process -Force
+          choco install innosetup --yes
+
+      - name: Zip dist folder
+        shell: powershell
+        run: |
+          Compress-Archive -Path "dist\\${{ env.APP_NAME }}\\*" -DestinationPath "${{ env.APP_NAME }}-windows-x86_64.zip" -Force
+
+      # generates a ./installer_orienteering-startlist-screen_0_1_0.exe
+      - name: Build installer
+        shell: powershell
+        env:
+          ISCC_PATH: C:\Program Files (x86)\Inno Setup 6\ISCC.exe
+        run: poetry run build-win-installer
+
+      - name: Upload artifacts (EXE + Installer + ZIP)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-windows-x86_64
+          path: |
+            installer_*.exe
+            ${{ env.APP_NAME }}-windows-x86_64.zi
+
+  release:
+    name: Create GitHub Release (from tag)
+    needs: [build-linux, build-windows]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

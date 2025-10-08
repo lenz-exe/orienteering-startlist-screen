@@ -73,9 +73,6 @@ class InnoSetupFileGenerator:
         if not os.path.isdir(iss_output_dir):
             raise NotADirectoryError(iss_output_dir)
 
-        # files = get_folders_and_files(target_dir=self.pyinstaller_output_dir)
-        # files_str = "\n".join([f"{file}" for file in files])
-
         src_dir = os.path.abspath(self.pyinstaller_output_dir)
 
         content = rf"""[Setup]
@@ -146,52 +143,11 @@ def normalize_installer_name(app_name: str, app_version: str) -> str:
     return installer_name
 
 
-def get_folders_and_files(
-    target_dir: str, ignore_extensions_list: Optional[str | tuple[str, ...]] = None
-) -> list:
-    """
-    Function to get a list of files and folders in the needed format for the Inno Setup Compiler.
-
-    :param target_dir: Target directory
-    :param ignore_extensions_list: List of file extensions to ignore e.g. ('.exe', '.dll') or just '.exe'
-    """
-    if not os.path.isdir(target_dir):
-        raise NotADirectoryError(target_dir)
-    formated_files = []
-    formated_folders = []
-    dest_dir = "{app}"
-    for root, dirs, files in os.walk(target_dir):
-        # We only care about the files in the root directory (the target_dir)
-        if root == target_dir:
-            for file in files:
-                if ignore_extensions_list and file.endswith(ignore_extensions_list):
-                    continue
-                file_path = os.path.join(root, file)
-                file_string = f'Source: "{file_path}"; DestDir: "{dest_dir}"; Flags: ignoreversion'
-                formated_files.append(file_string)
-
-            for folder in dirs:
-                folder_path = os.path.join(root, folder)
-                folder_string = f'Source: "{folder_path}\\*"; DestDir: "{dest_dir}\\{folder}"; Flags: ignoreversion recursesubdirs createallsubdirs'
-                formated_folders.append(folder_string)
-
-        # Prevent os.walk from going deeper into subdirectories
-        dirs[
-            :
-        ] = []  # Clear the dirs list so that os.walk doesn't descend into subfolders
-    return formated_files + formated_folders
-
-
-def compile_installer_exe(
-    iss_file_path: str, compiler_path: Optional[str] = None
-) -> bool:
+def compile_installer_exe(iss_file_path: str, compiler_path: Optional[str] = None) -> bool:
     try:
         if compiler_path and not os.path.isfile(compiler_path):
-            raise FileNotFoundError(
-                f"The given compiler path {compiler_path} not found"
-            )
+            raise FileNotFoundError(f"The given compiler path {compiler_path} not found")
 
-            # Fallback nur, wenn kein valider compiler_path übergeben
         if not compiler_path:
             default_path = r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
             compiler_path = default_path if os.path.exists(default_path) else None
@@ -200,25 +156,13 @@ def compile_installer_exe(
             compiler_path = search_for_inno_setup_folder()
 
         if not compiler_path:
-            compiler_path = input(
-                "The Inno Setup Compiler could not be found. "
-                "Please provide the path to the ISCC.exe: "
-            )
-            if not os.path.exists(compiler_path):
-                print("The given path does not exist. Exit script.")
-                return False
+            raise FileNotFoundError("Inno Setup Compiler (ISCC.exe) not found")
 
-        command = [compiler_path, iss_file_path]
-
-        try:
-            subprocess.run(command, check=True)
-            print("Compiling successful!")
-            return True
-        except subprocess.CalledProcessError as e:
-            print(f"Error while compiling: {e}")
-            return False
+        subprocess.run([compiler_path, iss_file_path], check=True)
+        print("Compiling successful!")
+        return True
     except Exception as e:
-        print(f"An unexpected error: {e}")
+        print(f"Error while compiling: {e}")
         return False
 
 
@@ -392,5 +336,7 @@ def build_win_installer():
     )
     installer_generator.create_iss_file(".")
     iss_file_path = os.path.join(".", f"{installer_generator.app_name}.iss")
-    result = compile_installer_exe(iss_file_path=iss_file_path)
+    iscc_env = os.environ.get("ISCC_PATH")
+    iscc_env = iscc_env if iscc_env else None
+    result = compile_installer_exe(iss_file_path=iss_file_path, compiler_path=iscc_env)
     print(f"Compile result: {result}")
