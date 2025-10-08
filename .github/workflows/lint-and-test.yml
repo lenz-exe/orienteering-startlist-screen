@@ -49,7 +49,7 @@ jobs:
         run: poetry install --no-interaction --no-root
 
       - name: Run checks
-        run: poetry run checks-ci
+        run: poetry run check-ci
 
       - name: Upload test reports
         if: always()
