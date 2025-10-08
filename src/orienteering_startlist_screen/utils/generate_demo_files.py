@@ -6,6 +6,7 @@ import pycountry
 from datetime import datetime, timedelta
 from lxml import etree
 from orienteering_startlist_screen import config
+from typing import Mapping, cast
 
 
 def _iso(dt: datetime) -> str:
@@ -22,37 +23,45 @@ def _iso(dt: datetime) -> str:
         return dt.strftime("%Y-%m-%dT%H:%M:%S")
 
 
-def generate_individual_startlist_xml(num_classes: int = 4,
-                           participants_per_class: int = 10,
-                           global_start_time: datetime = datetime.now().replace(second=0, microsecond=0),
-                           interval_seconds: int = 60,
-                           class_spacing_seconds: int = 0,
-                           number_of_starts: int = 2,
-                           xsd_file_path: str = "./iof_v3_0.xsd",
-                           out_path: str = "./example_generated.xml") -> str:
+def generate_individual_startlist_xml(
+    num_classes: int = 4,
+    participants_per_class: int = 10,
+    global_start_time: datetime = datetime.now().replace(second=0, microsecond=0),
+    interval_seconds: int = 60,
+    class_spacing_seconds: int = 0,
+    number_of_starts: int = 2,
+    xsd_file_path: str = "./iof_v3_0.xsd",
+    out_path: str = "./example_generated.xml",
+) -> str:
     fake = Faker()
 
     nsmap = {
         None: "http://www.orienteering.org/datastandard/3.0",  # Default namespace
-        "xsi": "http://www.w3.org/2001/XMLSchema-instance"
+        "xsi": "http://www.w3.org/2001/XMLSchema-instance",
     }
 
     root = etree.Element(
         "StartList",
-        nsmap=nsmap,
+        nsmap=cast(Mapping[str, str], nsmap),
         iofVersion="3.0",
         createTime=_iso(datetime.now()),
         creator=f"{config.application_name} / {config.organization_name}",
     )
 
-    last_start_datetime = (num_classes * class_spacing_seconds) + (interval_seconds * (participants_per_class -1))
+    last_start_datetime = (num_classes * class_spacing_seconds) + (
+        interval_seconds * (participants_per_class - 1)
+    )
     end_datetime = global_start_time + timedelta(seconds=last_start_datetime)
 
     event = etree.SubElement(root, "Event")
     etree.SubElement(event, "Name").text = "Test-Event"
     start_time_el = etree.SubElement(event, "StartTime")
-    etree.SubElement(start_time_el, "Date").text = global_start_time.strftime("%Y-%m-%d")
-    etree.SubElement(start_time_el, "Time").text = global_start_time.strftime("%H:%M:%S")
+    etree.SubElement(start_time_el, "Date").text = global_start_time.strftime(
+        "%Y-%m-%d"
+    )
+    etree.SubElement(start_time_el, "Time").text = global_start_time.strftime(
+        "%H:%M:%S"
+    )
     end_time_el = etree.SubElement(event, "EndTime")
     etree.SubElement(end_time_el, "Date").text = end_datetime.strftime("%Y-%m-%d")
     etree.SubElement(end_time_el, "Time").text = end_datetime.strftime("%H:%M:%S")
@@ -65,14 +74,20 @@ def generate_individual_startlist_xml(num_classes: int = 4,
     for class_index in range(num_classes):
         classes_el = etree.SubElement(root, "ClassStart")
         class_el = etree.SubElement(classes_el, "Class")
-        etree.SubElement(classes_el, "StartName").text = f"Start {random.choice(range(1, number_of_starts + 1))}"
+        etree.SubElement(
+            classes_el, "StartName"
+        ).text = f"Start {random.choice(range(1, number_of_starts + 1))}"
         etree.SubElement(class_el, "Id").text = str(class_index)
-        class_name = f"{random.choice(["Men", "Women"])}"
+        class_name = f"{random.choice(['Men', 'Women'])}"
         class_name_short = class_name[0]
         etree.SubElement(class_el, "Name").text = f"{class_name}-{class_index}"
-        etree.SubElement(class_el, "ShortName").text = f"{class_name_short}-{class_index}"
+        etree.SubElement(
+            class_el, "ShortName"
+        ).text = f"{class_name_short}-{class_index}"
 
-        class_base_start = global_start_time + timedelta(seconds=class_index * class_spacing_seconds)
+        class_base_start = global_start_time + timedelta(
+            seconds=class_index * class_spacing_seconds
+        )
 
         for person_index in range(participants_per_class):
             person_id += 1
@@ -92,7 +107,9 @@ def generate_individual_startlist_xml(num_classes: int = 4,
 
             club_el = etree.SubElement(person_start_el, "Organisation")
             etree.SubElement(club_el, "Id").text = str(club_id)
-            etree.SubElement(club_el, "Name").text = f"{random.choice(['TSV', 'OLG', 'SV', 'SC'])} {fake.city()}"
+            etree.SubElement(
+                club_el, "Name"
+            ).text = f"{random.choice(['TSV', 'OLG', 'SV', 'SC'])} {fake.city()}"
             country_name = fake.country()
             try:
                 country_obj = pycountry.countries.lookup(country_name)
@@ -103,11 +120,15 @@ def generate_individual_startlist_xml(num_classes: int = 4,
 
             start_el = etree.SubElement(person_start_el, "Start")
             etree.SubElement(start_el, "BibNumber").text = str(bib_number)
-            person_start_time = class_base_start + timedelta(seconds=person_index * interval_seconds)
+            person_start_time = class_base_start + timedelta(
+                seconds=person_index * interval_seconds
+            )
             etree.SubElement(start_el, "StartTime").text = _iso(person_start_time)
             etree.SubElement(start_el, "ControlCard").text = str(control_card)
 
-    xml_bytes = etree.tostring(root, pretty_print=True, xml_declaration=True, encoding="utf-8")
+    xml_bytes = etree.tostring(
+        root, pretty_print=True, xml_declaration=True, encoding="utf-8"
+    )
     with open(out_path, "wb") as f:
         f.write(xml_bytes)
 

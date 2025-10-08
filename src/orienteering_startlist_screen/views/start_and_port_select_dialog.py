@@ -3,19 +3,27 @@ import os
 
 from PySide6 import QtWidgets
 from PySide6.QtWidgets import (
-    QMessageBox, QHBoxLayout, QVBoxLayout, QWidget,
-    QLineEdit, QComboBox, QDialogButtonBox
+    QMessageBox,
+    QHBoxLayout,
+    QVBoxLayout,
+    QWidget,
+    QLineEdit,
+    QComboBox,
+    QDialogButtonBox,
 )
-from PySide6.QtCore import Qt
 from PySide6.QtGui import QIntValidator
 
-from orienteering_startlist_screen.ui.start_port_select_dialog_ui import Ui_StartPortSelectDialog
+from orienteering_startlist_screen.ui.start_port_select_dialog_ui import (
+    Ui_StartPortSelectDialog,
+)
 
 logger = logging.getLogger(__name__)
 
 
 class StartAndPortSelectDialog(QtWidgets.QDialog):
-    def __init__(self, start_name_list: list, parent=None, max_servers: int | None = None):
+    def __init__(
+        self, start_name_list: list, parent=None, max_servers: int | None = None
+    ):
         super().__init__(parent)
         self.ui = Ui_StartPortSelectDialog()
         self.ui.setupUi(self)
@@ -25,7 +33,7 @@ class StartAndPortSelectDialog(QtWidgets.QDialog):
 
         if max_servers is None:
             cpu_count = os.cpu_count() or 4
-            max_servers = max(1, cpu_count -1 if cpu_count > 2 else max_servers)
+            max_servers = max(1, cpu_count - 1 if cpu_count > 2 else 1)
         self.max_servers = max_servers
 
         self.ui.scrollArea.setWidgetResizable(True)
@@ -40,7 +48,7 @@ class StartAndPortSelectDialog(QtWidgets.QDialog):
         # start_name_list.sort(key=lambda x: int(x.split()[1]))
         start_name_list = sorted(start_name_list, key=lambda x: int(x.split()[1]))
 
-        choices = ['---'] + start_name_list
+        choices = ["---"] + start_name_list
 
         port = 5000
         for _ in choices:
@@ -56,12 +64,14 @@ class StartAndPortSelectDialog(QtWidgets.QDialog):
             combo = QComboBox()
             combo.addItems(choices)
             combo.setCurrentIndex(0)
-            for i in range(combo.count()):
-                combo.setItemData(i, Qt.AlignLeft | Qt.AlignVCenter, Qt.TextAlignmentRole)
-            combo.view().setTextElideMode(Qt.ElideNone)
-            combo.setSizeAdjustPolicy(QComboBox.AdjustToContents)
             fm = combo.fontMetrics()
-            w = max(fm.horizontalAdvance(combo.itemText(i)) for i in range(combo.count())) + 32
+            w = (
+                max(
+                    fm.horizontalAdvance(combo.itemText(i))
+                    for i in range(combo.count())
+                )
+                + 32
+            )
             combo.setMinimumWidth(max(150, w))
 
             row_layout.addWidget(combo)
@@ -79,8 +89,12 @@ class StartAndPortSelectDialog(QtWidgets.QDialog):
 
         container_layout.addStretch(1)
 
-        self.ui.buttonBox.button(QDialogButtonBox.Apply).setEnabled(False)
-        self.ui.buttonBox.button(QDialogButtonBox.Apply).clicked.connect(self.handle_apply)
+        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Apply).setEnabled(
+            False
+        )
+        self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Apply).clicked.connect(
+            self.handle_apply
+        )
         self.ui.label_max_servers.setText(f"Selected: 0 / {self.max_servers}")
         self.enforce_selection_cap()
 
@@ -94,7 +108,7 @@ class StartAndPortSelectDialog(QtWidgets.QDialog):
         # if limit reached: all combo boxes left set on deactivated
         limit_reached = selected_count >= self.max_servers
         for row in self._rows:
-            combo = row['combo']
+            combo = row["combo"]
             is_selected = combo.currentIndex() > 0
             if is_selected:
                 combo.setEnabled(True)  # already selected stay always editable
@@ -104,10 +118,12 @@ class StartAndPortSelectDialog(QtWidgets.QDialog):
         any_selected = selected_count > 0
         self.ui.buttonBox.button(QDialogButtonBox.Apply).setEnabled(any_selected)
 
-        self.ui.label_max_servers.setText(f"Selected: {selected_count} / {self.max_servers}")
+        self.ui.label_max_servers.setText(
+            f"Selected: {selected_count} / {self.max_servers}"
+        )
 
     def update_apply_enabled(self):
-        any_selected = any(r["combo"].currentText() != '---' for r in self._rows)
+        any_selected = any(r["combo"].currentText() != "---" for r in self._rows)
         self.ui.buttonBox.button(QDialogButtonBox.Apply).setEnabled(any_selected)
 
     def handle_apply(self):
@@ -118,8 +134,8 @@ class StartAndPortSelectDialog(QtWidgets.QDialog):
             if combo_box == "---":
                 continue
 
-            host = row['host_le'].text().strip()
-            port_text = row['port_le'].text().strip()
+            host = row["host_le"].text().strip()
+            port_text = row["port_le"].text().strip()
 
             # simple port validation
             # port range: 1 - 65535 (16-Bit)
@@ -135,11 +151,13 @@ class StartAndPortSelectDialog(QtWidgets.QDialog):
             if not (1 <= int(port_text) <= 65535):
                 errors.append(f"Port is out of range (1-65535): {port_text}")
                 continue
-            results.append({
-                "host": host,
-                "port": int(port_text),
-                "combo": combo_box,
-            })
+            results.append(
+                {
+                    "host": host,
+                    "port": int(port_text),
+                    "combo": combo_box,
+                }
+            )
 
         if errors:
             QMessageBox.warning(self, "Input Error", "\n".join(errors))
@@ -149,7 +167,11 @@ class StartAndPortSelectDialog(QtWidgets.QDialog):
             return
 
         if len(results) > self.max_servers:
-            QMessageBox.warning(self, "Limit Exceeded", f"Maximum number of servers reached: {self.max_servers}")
+            QMessageBox.warning(
+                self,
+                "Limit Exceeded",
+                f"Maximum number of servers reached: {self.max_servers}",
+            )
             return
         self.result_data = results
         self.accept()

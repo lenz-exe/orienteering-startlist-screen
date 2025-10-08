@@ -9,19 +9,19 @@ from src.orienteering_startlist_screen import config
 
 class InnoSetupFileGenerator:
     def __init__(
-            self,
-            app_name: str,
-            app_version: str,
-            installer_output_dir: str,
-            pyinstaller_exe_name: str,
-            app_id_path: str,
-            pyinstaller_output_dir: str,
-            app_icon_path: Optional[str] = None,
-            org_name: str = "Example Company",
-            org_url: str = "https://www.example.com",
-            license_path: Optional[str] = None,
-            installer_name: Optional[str] = None,
-            need_admin_install: bool = True,
+        self,
+        app_name: str,
+        app_version: str,
+        installer_output_dir: str,
+        pyinstaller_exe_name: str,
+        app_id_path: str,
+        pyinstaller_output_dir: str,
+        app_icon_path: Optional[str] = None,
+        org_name: str = "Example Company",
+        org_url: str = "https://www.example.com",
+        license_path: Optional[str] = None,
+        installer_name: Optional[str] = None,
+        need_admin_install: bool = True,
     ):
         """
         Class to generate the .iss file for the Inno Setup Compiler.
@@ -58,7 +58,9 @@ class InnoSetupFileGenerator:
         self.org_url = org_url
         self.license_path = license_path
         if not installer_name:
-            self.installer_name = normalize_installer_name(app_name=app_name, app_version=app_version)
+            self.installer_name = normalize_installer_name(
+                app_name=app_name, app_version=app_version
+            )
         else:
             self.installer_name = installer_name
         self.need_admin_install = need_admin_install
@@ -75,7 +77,7 @@ class InnoSetupFileGenerator:
         # files_str = "\n".join([f"{file}" for file in files])
 
         content = rf"""[Setup]
-AppId={'{{' + self.app_id + '}}'}
+AppId={"{{" + self.app_id + "}}"}
 AppName={self.app_name}
 AppVersion={self.app_version}
 AppPublisher={self.org_name}
@@ -85,12 +87,12 @@ AppUpdatesURL={self.org_url}
 DefaultDirName={{autopf}}\{self.app_name}
 UninstallDisplayIcon={{app}}\{self.pyinstaller_exe_name}
 DisableProgramGroupPage=yes
-{f'LicenseFile={self.license_path}' if self.license_path else ''}
-{'' if self.need_admin_install else 'PrivilegesRequired=lowest'}
+{f"LicenseFile={self.license_path}" if self.license_path else ""}
+{"" if self.need_admin_install else "PrivilegesRequired=lowest"}
 ; PrivilegesRequiredOverridesAllowed=dialog
 OutputDir={self.installer_output_dir}
 OutputBaseFilename={self.installer_name}
-{f'SetupIconFile={self.app_icon_path}' if self.app_icon_path else ''}
+{f"SetupIconFile={self.app_icon_path}" if self.app_icon_path else ""}
 SolidCompression=yes
 WizardStyle=modern
 
@@ -111,7 +113,7 @@ Name: "{{autodesktop}}\{self.app_name}"; Filename: "{{app}}\{self.pyinstaller_ex
 ; Start the app after the installation (optional)
 Filename: "{{app}}\{self.pyinstaller_exe_name}"; Description: "{{cm:LaunchProgram,{self.app_name}}}"; Flags: nowait postinstall skipifsilent
 """
-        with open(os.path.join(iss_output_dir, f"{self.app_name}.iss"), 'w') as file:
+        with open(os.path.join(iss_output_dir, f"{self.app_name}.iss"), "w") as file:
             file.write(content)
 
 
@@ -142,7 +144,9 @@ def normalize_installer_name(app_name: str, app_version: str) -> str:
     return installer_name
 
 
-def get_folders_and_files(target_dir: str, ignore_extensions_list: Optional[str | tuple[str, ...]] = None) -> list:
+def get_folders_and_files(
+    target_dir: str, ignore_extensions_list: Optional[str | tuple[str, ...]] = None
+) -> list:
     """
     Function to get a list of files and folders in the needed format for the Inno Setup Compiler.
 
@@ -303,7 +307,7 @@ def build_spec():
 
     command = [
         "pyi-makespec",
-        '--windowed',             # no terminal console
+        "--windowed",  # no terminal console
         "--contents-directory",
         ".",  # Use “.” to re-enable old one dir layout without contents directory
         f'--name "{config.application_name}"',

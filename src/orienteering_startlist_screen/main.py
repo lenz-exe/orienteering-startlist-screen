@@ -29,17 +29,14 @@ def main():
     app_dir.mkdir(parents=True, exist_ok=True)
     log_path = app_dir / f"{config.module_name}.log"
     rot_log_handler = RotatingFileHandler(
-        filename=str(log_path),
-        maxBytes=750000,
-        backupCount=2,
-        delay=False,
-        errors=None)
+        filename=str(log_path), maxBytes=750000, backupCount=2, delay=False, errors=None
+    )
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s %(levelname)s %(name)s:%(funcName)s(%(lineno)d): %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S',
-        encoding='utf-8',
-        handlers=[rot_log_handler]
+        format="%(asctime)s %(levelname)s %(name)s:%(funcName)s(%(lineno)d): %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        encoding="utf-8",
+        handlers=[rot_log_handler],
     )
     logger.info(f"Tool started | Version: {config.application_version}")
 
@@ -51,7 +48,7 @@ def main():
         "danger": "#b00020",
         "warning": "#ffb300",
         "success": "#4caf50",
-        'density_scale': '-1',
+        "density_scale": "-1",
     }
 
     theme_path = "src/orienteering_startlist_screen/resources/theme_forest.xml"

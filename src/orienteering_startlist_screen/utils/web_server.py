@@ -1,4 +1,3 @@
-import os
 from datetime import datetime
 from typing import Dict, List
 from pathlib import Path
@@ -8,22 +7,30 @@ from werkzeug.serving import make_server
 import threading
 import time
 import logging
+from orienteering_startlist_screen.utils.own_dataclasses import Participant
+
 
 logging.getLogger("werkzeug").setLevel(logging.WARNING)
+
 
 def resource_path(*parts: str) -> str:
     """Get the correct path in development environment and in binary environment."""
     base = getattr(sys, "_MEIPASS", Path(__file__).resolve().parent)
     return str(Path(base, *parts))
 
-def create_app(start_list: Dict[datetime, List], slot_seconds: int = 60, start_name: str = "") -> Flask:
+
+def create_app(
+    start_list: Dict[datetime, List[Participant]],
+    slot_seconds: int = 60,
+    start_name: str = "",
+) -> Flask:
     template_dir = resource_path("templates")
     static_dir = resource_path("static")
     app = Flask(
         __name__,
         template_folder=template_dir,
         static_folder=static_dir,
-        static_url_path="/static"
+        static_url_path="/static",
     )
 
     @app.get("/api/now")
@@ -48,6 +55,7 @@ def create_app(start_list: Dict[datetime, List], slot_seconds: int = 60, start_n
             raise Exception(e)
 
     return app
+
 
 class WebServerThread:
     def __init__(self, app: Flask, host: str = "127.0.0.1", port: int = 5000):

@@ -1,10 +1,9 @@
 import datetime
 import logging
 import os
-from typing import Optional, Any
+from typing import Optional, Any, List
 import webbrowser
 from pathlib import Path
-
 from PySide6 import QtWidgets
 from PySide6 import QtCore
 from PySide6.QtWidgets import QFileDialog, QMessageBox
@@ -12,10 +11,15 @@ from PySide6.QtCore import QSettings, QFileInfo, QStandardPaths
 
 from orienteering_startlist_screen import config
 from orienteering_startlist_screen.ui.main_window_ui import Ui_MainWindow
+from orienteering_startlist_screen.utils.own_dataclasses import Participant
 from orienteering_startlist_screen.utils import parser
 from orienteering_startlist_screen.utils.web_server import create_app, WebServerThread
-from orienteering_startlist_screen.utils.generate_demo_files import generate_individual_startlist_xml
-from orienteering_startlist_screen.views.start_and_port_select_dialog import StartAndPortSelectDialog
+from orienteering_startlist_screen.utils.generate_demo_files import (
+    generate_individual_startlist_xml,
+)
+from orienteering_startlist_screen.views.start_and_port_select_dialog import (
+    StartAndPortSelectDialog,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -37,33 +41,41 @@ class MainWindow(QtWidgets.QMainWindow):
             raise FileNotFoundError("XSD file not found")
         self.xsd_file_path = xsd_file_path
 
-        self.start_list = None
+        self.start_list: dict[str, dict[datetime.datetime, List[Participant]]] = {}
         self.server_running = False
         self.web_servers: dict[Any, Any] = {}
 
-        status_bar_version_label = QtWidgets.QLabel(f"Version: {config.application_version} ")
+        status_bar_version_label = QtWidgets.QLabel(
+            f"Version: {config.application_version} "
+        )
         self.statusBar().addPermanentWidget(status_bar_version_label)
         copyright_date = datetime.date.today()
-        status_bar_copyright_label = QtWidgets.QLabel(f"{copyright_date.year} {config.organization_name} ")
+        status_bar_copyright_label = QtWidgets.QLabel(
+            f"{copyright_date.year} {config.organization_name} "
+        )
         self.statusBar().addPermanentWidget(status_bar_copyright_label)
 
         self.ui.button_push_select_file.clicked.connect(self.select_import_file)
 
         self.ui.button_push_start.setEnabled(False)
         self.ui.button_push_start.clicked.connect(self.start_clock)
-        self.ui.button_push_start.setProperty('class', 'success')
+        self.ui.button_push_start.setProperty("class", "success")
 
         self.ui.button_push_stop.setEnabled(False)
         self.ui.button_push_stop.setVisible(False)
         self.ui.button_push_stop.clicked.connect(self.stop_clock)
-        self.ui.button_push_stop.setProperty('class', 'danger')
+        self.ui.button_push_stop.setProperty("class", "danger")
 
         self.ui.action_about.triggered.connect(self.open_about_dialog)
         self.ui.action_generate_demo_fIle.triggered.connect(self.generate_demo_file)
         self.ui.label_status.setText("Please select a .xml file")
 
     def generate_demo_file(self) -> None:
-        tmp_dir = Path(QStandardPaths.writableLocation(QStandardPaths.TempLocation))
+        tmp_dir = Path(
+            QStandardPaths.writableLocation(
+                QStandardPaths.StandardLocation.TempLocation
+            )
+        )
         tmp_dir.mkdir(parents=True, exist_ok=True)
         tmp_path = os.path.join(tmp_dir, "example_generated.xml")
 
@@ -92,18 +104,18 @@ class MainWindow(QtWidgets.QMainWindow):
                 f"by: {config.organization_name}<br><br>"
                 "Source code on "
                 "<a href='https://github.com/lenz-exe/orienteering-startlist-screen/'>GitHub</a>."
-            )
+            ),
         )
 
     def select_import_file(self, import_file: Optional[str] = None) -> None:
         if not import_file:
             selected_file = self.open_file_dialog(
-                title='Open Orienteering-Online File',
-                file_extensions='XML Files (*.xml);;All Files (*)',
-                default_file_extension='All Files (*)',
+                title="Open Orienteering-Online File",
+                file_extensions="XML Files (*.xml);;All Files (*)",
+                default_file_extension="XML Files (*.xml)",
                 use_last_used_path=True,
-                settings_key='last_used_import_path',
-                overwrite_last_used_path=True
+                settings_key="last_used_import_path",
+                overwrite_last_used_path=True,
             )
         else:
             if not os.path.isfile(import_file):
@@ -114,7 +126,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if selected_file:
             logger.info(f"Selected file: {selected_file}")
-            self.q_settings.setValue("last_used_import_path", QtCore.QFileInfo(selected_file).absolutePath())
+            self.q_settings.setValue(
+                "last_used_import_path", QtCore.QFileInfo(selected_file).absolutePath()
+            )
             self.ui.lineEdit.setText(selected_file)
             self.app.processEvents()
             _, ext = os.path.splitext(selected_file)
@@ -123,22 +137,28 @@ class MainWindow(QtWidgets.QMainWindow):
             try:
                 if ext == ".xml":
                     start_list = parser.pars_participants_iof_xml_3_0(
-                        xml_file_path=selected_file,
-                        xsd_file_path=self.xsd_file_path
+                        xml_file_path=selected_file, xsd_file_path=self.xsd_file_path
                     )
                 else:
                     logger.warning(f"Unknown file format: {ext}")
-                    QMessageBox.warning(self,"Unknown File Format",
-                        f"The selected ({ext}) file format is unknown. Please use 'IOF XML 3.0' or OE2010 (.txt, .csv)")
+                    QMessageBox.warning(
+                        self,
+                        "Unknown File Format",
+                        f"The selected ({ext}) file format is unknown. Please use 'IOF XML 3.0' or OE2010 (.txt, .csv)",
+                    )
                     return
             except Exception as e:
                 logger.error(f"Failed to read the given file: {e}")
-                QMessageBox.critical(self, "Error", f"The start list could not be loaded:\n{e}")
+                QMessageBox.critical(
+                    self, "Error", f"The start list could not be loaded:\n{e}"
+                )
                 return
 
             self.start_list = start_list
             self.ui.button_push_start.setEnabled(True)
-            self.ui.label_status.setText("Startlist loaded. Now you can start the webserver.")
+            self.ui.label_status.setText(
+                "Startlist loaded. Now you can start the webserver."
+            )
 
     def start_clock(self) -> None:
         if not self.start_list:
@@ -161,21 +181,27 @@ class MainWindow(QtWidgets.QMainWindow):
         started_urls = []
 
         for item in selections:
-            host = item['host']
-            port = int(item['port'])
-            selection = item['combo']
+            host = item["host"]
+            port = int(item["port"])
+            selection = item["combo"]
             logger.info(f"Selection: host={host}, port={port}, selection='{selection}'")
 
-            start_list = self.start_list.get(selection)
-            app = create_app(start_list=start_list, slot_seconds=slot_seconds, start_name=selection)
+            start_list = self.start_list.get(selection, {})
+            app = create_app(
+                start_list=start_list, slot_seconds=slot_seconds, start_name=selection
+            )
             server = WebServerThread(app, host=host, port=port)
             try:
                 server.start()
                 logger.info(f"Server started {host}:{port}")
-                self.ui.listWidget_running_servers.addItem(f"{selection}: {host}:{port}")
+                self.ui.listWidget_running_servers.addItem(
+                    f"{selection}: {host}:{port}"
+                )
             except Exception as e:
                 logger.error(f"Failed to start server ({host}:{port}): {e}")
-                QMessageBox.critical(self, "Error", f"Failed to start server ({host}:{port}): {e}")
+                QMessageBox.critical(
+                    self, "Error", f"Failed to start server ({host}:{port}): {e}"
+                )
                 continue
             self.web_servers[(host, port)] = server
             started_urls.append(f"http://{host}:{port}/")
@@ -231,24 +257,37 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.listWidget_running_servers.clear()
         self.web_servers.clear()
         if errors:
-            QMessageBox.critical(self, "Shutdown-Error", f"Some servers could not be shut down correctly:\n {'\n'.join(errors)}")
+            QMessageBox.critical(
+                self,
+                "Shutdown-Error",
+                f"Some servers could not be shut down correctly:\n {'\n'.join(errors)}",
+            )
 
-    def open_file_dialog(self, title: str = 'Open File', file_extensions: str = 'All Files(*)',
-                         default_file_extension: str = 'All Files(*)', use_last_used_path: bool = False,
-                         settings_key: Optional[str] = None, overwrite_last_used_path: bool = False) \
-            -> Optional[str]:
+    def open_file_dialog(
+        self,
+        title: str = "Open File",
+        file_extensions: str = "All Files(*)",
+        default_file_extension: str = "All Files(*)",
+        use_last_used_path: bool = False,
+        settings_key: Optional[str] = None,
+        overwrite_last_used_path: bool = False,
+    ) -> Optional[str]:
         if use_last_used_path and settings_key:
             last_path = str(self.q_settings.value(settings_key, ""))
         else:
             last_path = ""
 
         dialog = QFileDialog(self, title, last_path, file_extensions)
-        dialog.setFileMode(QFileDialog.ExistingFile)
+        dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
         dialog.selectNameFilter(default_file_extension)
 
         if dialog.exec_():
-            selected_file = dialog.selectedFiles()[0]  # This gets the selected file path
+            selected_file = dialog.selectedFiles()[
+                0
+            ]  # This gets the selected file path
             if overwrite_last_used_path and settings_key:
-                self.q_settings.setValue(settings_key, QFileInfo(selected_file).absolutePath())
+                self.q_settings.setValue(
+                    settings_key, QFileInfo(selected_file).absolutePath()
+                )
             return selected_file
         return None
