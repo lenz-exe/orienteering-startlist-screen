@@ -120,7 +120,7 @@ jobs:
           name: ${{ env.APP_NAME }}-windows-x86_64
           path: |
             installer_*.exe
-            ${{ env.APP_NAME }}-windows-x86_64.zi
+            ${{ env.APP_NAME }}-windows-x86_64.zip
 
   release:
     name: Create GitHub Release (from tag)
