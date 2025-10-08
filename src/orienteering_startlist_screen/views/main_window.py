@@ -3,11 +3,12 @@ import logging
 import os
 from typing import Optional, Any
 import webbrowser
+from pathlib import Path
 
 from PySide6 import QtWidgets
 from PySide6 import QtCore
 from PySide6.QtWidgets import QFileDialog, QMessageBox
-from PySide6.QtCore import QCoreApplication, QSettings, QFileInfo
+from PySide6.QtCore import QSettings, QFileInfo, QStandardPaths
 
 from orienteering_startlist_screen import config
 from orienteering_startlist_screen.ui.main_window_ui import Ui_MainWindow
@@ -26,14 +27,16 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        QCoreApplication.setOrganizationName(config.organization_name)
-        QCoreApplication.setOrganizationDomain(config.organization_domain)
-        QCoreApplication.setApplicationName(config.application_name)
-        QCoreApplication.setApplicationVersion(config.application_version)
-
         self.q_settings = QSettings()
 
-        self.xsd_file_path = "./src/orienteering_startlist_screen/resources/iof_v3_0.xsd"
+        xsd_file_path = "src/orienteering_startlist_screen/resources/iof_v3_0.xsd"
+        if not os.path.isfile(xsd_file_path):
+            xsd_file_path = "iof_v3_0.xsd"
+        if not os.path.isfile(xsd_file_path):
+            print("XSD file not found")
+            raise FileNotFoundError("XSD file not found")
+        self.xsd_file_path = xsd_file_path
+
         self.start_list = None
         self.server_running = False
         self.web_servers: dict[Any, Any] = {}
@@ -60,7 +63,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.label_status.setText("Please select a .xml file")
 
     def generate_demo_file(self) -> None:
-        file_path = generate_individual_startlist_xml(num_classes=10, participants_per_class=20, number_of_starts=15)
+        tmp_dir = Path(QStandardPaths.writableLocation(QStandardPaths.TempLocation))
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+        tmp_path = os.path.join(tmp_dir, "example_generated.xml")
+
+        file_path = generate_individual_startlist_xml(
+            num_classes=10,
+            participants_per_class=20,
+            number_of_starts=2,
+            xsd_file_path=self.xsd_file_path,
+            out_path=tmp_path,
+        )
 
         if not os.path.isfile(file_path):
             logger.error(f"File {file_path} not found")
@@ -151,7 +164,7 @@ class MainWindow(QtWidgets.QMainWindow):
             host = item['host']
             port = int(item['port'])
             selection = item['combo']
-            logger.info(f"Selection: host={host}, port={port}, selection={selection}")
+            logger.info(f"Selection: host={host}, port={port}, selection='{selection}'")
 
             start_list = self.start_list.get(selection)
             app = create_app(start_list=start_list, slot_seconds=slot_seconds, start_name=selection)

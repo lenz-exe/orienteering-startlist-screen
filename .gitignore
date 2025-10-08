@@ -44,3 +44,9 @@ report_ruff.json
 *.zip
 installer_*.exe
 *_generated.xml
+node_modules/
+package-lock.json
+package.json
+assets/
+*.iss
+*.spec

@@ -28,7 +28,7 @@ def generate_individual_startlist_xml(num_classes: int = 4,
                            interval_seconds: int = 60,
                            class_spacing_seconds: int = 0,
                            number_of_starts: int = 2,
-                           xsd_file_path: str = "./src/orienteering_startlist_screen/resources/iof_v3_0.xsd",
+                           xsd_file_path: str = "./iof_v3_0.xsd",
                            out_path: str = "./example_generated.xml") -> str:
     fake = Faker()
 

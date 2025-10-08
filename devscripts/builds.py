@@ -4,7 +4,6 @@ import shutil
 import os
 import uuid
 from typing import Optional
-
 from src.orienteering_startlist_screen import config
 
 
@@ -88,7 +87,7 @@ UninstallDisplayIcon={{app}}\{self.pyinstaller_exe_name}
 DisableProgramGroupPage=yes
 {f'LicenseFile={self.license_path}' if self.license_path else ''}
 {'' if self.need_admin_install else 'PrivilegesRequired=lowest'}
-PrivilegesRequiredOverridesAllowed=dialog
+; PrivilegesRequiredOverridesAllowed=dialog
 OutputDir={self.installer_output_dir}
 OutputBaseFilename={self.installer_name}
 {f'SetupIconFile={self.app_icon_path}' if self.app_icon_path else ''}
@@ -294,13 +293,17 @@ def build_spec():
     ]
     datas = [
         ("pyproject.toml", "."),
+        ("src/orienteering_startlist_screen/resources/iof_v3_0.xsd", "."),
+        ("src/orienteering_startlist_screen/resources/theme_forest.xml", "."),
+        ("src/orienteering_startlist_screen/utils/templates", "templates"),
+        ("src/orienteering_startlist_screen/utils/static", "static"),
     ]
 
     icon_path = "src/orienteering_startlist_screen/resources/images/logo.ico"
 
     command = [
         "pyi-makespec",
-        # '--windowed',             # no terminal console
+        '--windowed',             # no terminal console
         "--contents-directory",
         ".",  # Use “.” to re-enable old one dir layout without contents directory
         f'--name "{config.application_name}"',
@@ -327,7 +330,7 @@ def build_spec():
         sys.exit(result.returncode)
 
 
-def build_exe():
+def build_bin():
     spec_path = f"{config.application_name}.spec"
     if not os.path.exists(spec_path):
         print(f"{spec_path} could not be found!")
@@ -359,8 +362,8 @@ def build_exe():
         sys.exit(result.returncode)
 
 
-def build_installer():
-    build_exe()
+def build_win_installer():
+    build_bin()
 
     installer_generator = InnoSetupFileGenerator(
         app_name=config.application_name,

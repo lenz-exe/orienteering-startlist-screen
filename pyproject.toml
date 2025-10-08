@@ -27,8 +27,8 @@ check-ci = "devscripts.checks:checks_and_tests"
 generate-ui = "devscripts.generators:generate_ui"
 generate-rcc = "devscripts.generators:generate_rcc"
 build-spec = "devscripts.builds:build_spec"
-build-exe = "devscripts.builds:build_exe"
-build-installer = "devscripts.builds:build_installer"
+build-bin = "devscripts.builds:build_bin"
+build-win-installer = "devscripts.builds:build_win_installer"
 
 [tool.poetry]
 packages = [

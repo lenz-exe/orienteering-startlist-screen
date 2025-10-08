@@ -1,22 +1,35 @@
 import sys
 import traceback
 import locale
-import logging
 import os
+import logging
 from logging.handlers import RotatingFileHandler
 from PySide6.QtWidgets import QApplication
-from PySide6.QtCore import QLocale
+from PySide6.QtCore import QLocale, QSettings, QStandardPaths, QCoreApplication
 from orienteering_startlist_screen.views.main_window import MainWindow
 from orienteering_startlist_screen import config
 from qt_material import apply_stylesheet
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 
 def main():
-    log_name = f"{config.module_name}.log"
+    app = QApplication(sys.argv)
+    QCoreApplication.setOrganizationName(config.organization_name)
+    QCoreApplication.setOrganizationDomain(config.organization_domain)
+    QCoreApplication.setApplicationName(config.application_name)
+    QCoreApplication.setApplicationVersion(config.application_version)
+
+    QSettings.setDefaultFormat(QSettings.IniFormat)
+    q_settings = QSettings()
+    q_settings.setValue("language", "en_EN")
+
+    app_dir = Path(QStandardPaths.writableLocation(QStandardPaths.AppDataLocation))
+    app_dir.mkdir(parents=True, exist_ok=True)
+    log_path = app_dir / f"{config.module_name}.log"
     rot_log_handler = RotatingFileHandler(
-        filename=log_name,
+        filename=str(log_path),
         maxBytes=750000,
         backupCount=2,
         delay=False,
@@ -30,18 +43,9 @@ def main():
     )
     logger.info(f"Tool started | Version: {config.application_version}")
 
-    app = QApplication(sys.argv)
-    app.setObjectName(config.module_name)
-    app.setOrganizationName(config.application_name)
-    app.setOrganizationDomain(config.organization_domain)
-    app.setApplicationName(config.application_name)
-    app.setApplicationVersion(config.application_version)
-
     language = config.application_language
     QLocale.setDefault(QLocale(language))
     locale.setlocale(locale.LC_ALL, "")
-
-    theme_path = os.path.join("./src/orienteering_startlist_screen/resources/", "theme_forest.xml")
 
     extra = {
         "danger": "#b00020",
@@ -50,6 +54,9 @@ def main():
         'density_scale': '-1',
     }
 
+    theme_path = "src/orienteering_startlist_screen/resources/theme_forest.xml"
+    if not os.path.exists(theme_path):
+        theme_path = "theme_forest.xml"
     apply_stylesheet(app, theme=theme_path, extra=extra)
 
     main_window = MainWindow(application=app)

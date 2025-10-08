@@ -19,23 +19,7 @@
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="@yield('og_site_name', 'Startlist - Live')" />
 
-    <!-- DEV ONLY: Tailwind via CDN (fast prototyping) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        // optional: for a minimal tailwind-config setup in cdn-mode
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            50: '#f5faff', 100: '#e6f4ff', 200: '#bfddff', 300: '#92c2ff', 400: '#64a6ff',
-                            500: '#3c8cff', 600: '#1f6fe6', 700: '#1556b4', 800: '#0f3d82', 900: '#0a295a'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
     <style>
         table {
             border-collapse: collapse;
@@ -53,7 +37,7 @@
                         d="M12 2.25a9.75 9.75 0 1 0 9.75 9.75A9.76 9.76 0 0 0 12 2.25Zm.75 4.5a.75.75 0 0 0-1.5 0V12c0 .199.079.39.22.53l3 3a.75.75 0 1 0 1.06-1.06l-2.78-2.78V6.75Z"
                         clip-rule="evenodd" />
                 </svg>
-                <span class="font-semibold">Startlist: {{ event_name }}</span>
+                <span class="font-semibold">Startlist</span>
             </div>
             <div class="text-xl font-mono tabular-nums">{{ start_name }}</div>
             <div id="status" class="text-5xl font-mono tabular-nums">--:--:--</div>
@@ -122,7 +106,6 @@
 
         <footer class="mt-10 text-center text-xs text-gray-500">
                 <nav class="flex flex-wrap justify-center">
-                    <div class="px-5 py-2">Startlist - {{ event_name }}</div>
                     <div id="last_sync" class="px-5 py-2">last_sync</div>
                     <div id="last_sync_type" class="px-5 py-2">last_sync_type</div>
                 </nav>
