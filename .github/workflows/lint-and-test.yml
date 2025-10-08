@@ -1,0 +1,62 @@
+name: Lint and Test
+on:
+  push:
+    branches: ["**"]
+    tags: [ "v*", "V*"]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.13"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-test:
+    name: Lint & Test (Python 3.13)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+      
+      - name: Cache Poetry artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            ~/.cache/pip
+          key: ${{ runner.os }}-poetry-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-${{ env.PYTHON_VERSION }}-
+            ${{ runner.os }}-poetry-
+
+      - name: Install deps (poetry install)
+        run: poetry install --no-interaction --no-root
+
+      - name: Run checks
+        run: poetry run checks-ci
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports
+          path: |
+            report_pytest.xml
+            report_ruff.json
+          if-no-files-found: ignore

@@ -76,6 +76,8 @@ class InnoSetupFileGenerator:
         # files = get_folders_and_files(target_dir=self.pyinstaller_output_dir)
         # files_str = "\n".join([f"{file}" for file in files])
 
+        src_dir = os.path.abspath(self.pyinstaller_output_dir)
+
         content = rf"""[Setup]
 AppId={"{{" + self.app_id + "}}"}
 AppName={self.app_name}
@@ -103,7 +105,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{{cm:CreateDesktopIcon}}"; GroupDescription: "{{cm:AdditionalIcons}}"; Flags: unchecked
 
 [Files]
-Source: "dist\Orienteering-Startlist-Screen\*"; DestDir: "{{app}}"; Flags: recursesubdirs createallsubdirs ignoreversion
+Source: "{src_dir}\*"; DestDir: "{{app}}"; Flags: recursesubdirs createallsubdirs ignoreversion
 
 [Icons]
 Name: "{{autoprograms}}\{self.app_name}"; Filename: "{{app}}\{self.pyinstaller_exe_name}"
@@ -188,19 +190,23 @@ def compile_installer_exe(
             raise FileNotFoundError(
                 f"The given compiler path {compiler_path} not found"
             )
-        compiler_path = r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
 
-        if not os.path.exists(compiler_path):
+            # Fallback nur, wenn kein valider compiler_path übergeben
+        if not compiler_path:
+            default_path = r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+            compiler_path = default_path if os.path.exists(default_path) else None
+
+        if not compiler_path:
             compiler_path = search_for_inno_setup_folder()
 
-            if not compiler_path:
-                compiler_path = input(
-                    "The Inno Setup Compiler could not be found. "
-                    "Please provide the path to the ISCC.exe: "
-                )
-                if not os.path.exists(compiler_path):
-                    print("The given path is does not exists. Exit script.")
-                    return False
+        if not compiler_path:
+            compiler_path = input(
+                "The Inno Setup Compiler could not be found. "
+                "Please provide the path to the ISCC.exe: "
+            )
+            if not os.path.exists(compiler_path):
+                print("The given path does not exist. Exit script.")
+                return False
 
         command = [compiler_path, iss_file_path]
 
