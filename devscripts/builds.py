@@ -143,10 +143,14 @@ def normalize_installer_name(app_name: str, app_version: str) -> str:
     return installer_name
 
 
-def compile_installer_exe(iss_file_path: str, compiler_path: Optional[str] = None) -> bool:
+def compile_installer_exe(
+    iss_file_path: str, compiler_path: Optional[str] = None
+) -> bool:
     try:
         if compiler_path and not os.path.isfile(compiler_path):
-            raise FileNotFoundError(f"The given compiler path {compiler_path} not found")
+            raise FileNotFoundError(
+                f"The given compiler path {compiler_path} not found"
+            )
 
         if not compiler_path:
             default_path = r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
