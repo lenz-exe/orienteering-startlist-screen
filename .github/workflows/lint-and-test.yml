@@ -46,7 +46,7 @@ jobs:
             ${{ runner.os }}-poetry-
 
       - name: Install deps (poetry install)
-        run: poetry install --no-interaction --no-root
+        run: poetry install --no-interaction
 
       - name: Run checks
         run: poetry run check-ci
